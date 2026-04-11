@@ -2,7 +2,7 @@
 
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useActionState, useState } from "react";
+import { Suspense, useActionState, useState } from "react";
 import { registerUser } from "@/actions/auth";
 
 function GoogleButton() {
@@ -140,7 +140,7 @@ function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
 	);
 }
 
-export default function LoginPage() {
+function LoginContent() {
 	const searchParams = useSearchParams();
 	const [mode, setMode] = useState<"signin" | "register">("signin");
 	const [registered, setRegistered] = useState(false);
@@ -155,62 +155,70 @@ export default function LoginPage() {
 	}
 
 	return (
-		<main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-4">
-			<div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-xl">
-				<div className="mb-6 text-center">
-					<span className="text-5xl">⚽</span>
-					<h1 className="mt-3 text-2xl font-bold">
-						{mode === "signin" ? "Sign in to play" : "Create account"}
-					</h1>
-					<p className="mt-1 text-sm text-foreground-muted">
-						World Cup 2026 Predictor
-					</p>
-				</div>
-
-				{registered && mode === "signin" && (
-					<p className="mb-4 rounded-lg bg-accent/10 px-3 py-2 text-center text-sm text-accent">
-						Account created — sign in below
-					</p>
-				)}
-
-				<div className="flex flex-col gap-4">
-					{mode === "signin" ? (
-						<>
-							<SignInForm error={signInError} />
-							<Divider />
-							<GoogleButton />
-						</>
-					) : (
-						<RegisterForm onSuccess={handleRegistered} />
-					)}
-				</div>
-
-				<p className="mt-6 text-center text-sm text-foreground-muted">
-					{mode === "signin" ? (
-						<>
-							No account?{" "}
-							<button
-								type="button"
-								onClick={() => { setMode("register"); setRegistered(false); }}
-								className="text-accent hover:underline"
-							>
-								Register
-							</button>
-						</>
-					) : (
-						<>
-							Already have an account?{" "}
-							<button
-								type="button"
-								onClick={() => setMode("signin")}
-								className="text-accent hover:underline"
-							>
-								Sign in
-							</button>
-						</>
-					)}
+		<div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-xl">
+			<div className="mb-6 text-center">
+				<span className="text-5xl">⚽</span>
+				<h1 className="mt-3 text-2xl font-bold">
+					{mode === "signin" ? "Sign in to play" : "Create account"}
+				</h1>
+				<p className="mt-1 text-sm text-foreground-muted">
+					World Cup 2026 Predictor
 				</p>
 			</div>
+
+			{registered && mode === "signin" && (
+				<p className="mb-4 rounded-lg bg-accent/10 px-3 py-2 text-center text-sm text-accent">
+					Account created — sign in below
+				</p>
+			)}
+
+			<div className="flex flex-col gap-4">
+				{mode === "signin" ? (
+					<>
+						<SignInForm error={signInError} />
+						<Divider />
+						<GoogleButton />
+					</>
+				) : (
+					<RegisterForm onSuccess={handleRegistered} />
+				)}
+			</div>
+
+			<p className="mt-6 text-center text-sm text-foreground-muted">
+				{mode === "signin" ? (
+					<>
+						No account?{" "}
+						<button
+							type="button"
+							onClick={() => { setMode("register"); setRegistered(false); }}
+							className="text-accent hover:underline"
+						>
+							Register
+						</button>
+					</>
+				) : (
+					<>
+						Already have an account?{" "}
+						<button
+							type="button"
+							onClick={() => setMode("signin")}
+							className="text-accent hover:underline"
+						>
+							Sign in
+						</button>
+					</>
+				)}
+			</p>
+		</div>
+	);
+}
+
+export default function LoginPage() {
+	return (
+		<main className="flex min-h-dvh flex-col items-center justify-center gap-8 px-4">
+			<Suspense>
+				<LoginContent />
+			</Suspense>
 		</main>
 	);
 }
