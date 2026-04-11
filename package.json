@@ -1,34 +1,49 @@
 {
-  "name": "football-predictor",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.2.3",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.3",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  },
-  "ignoreScripts": [
-    "sharp",
-    "unrs-resolver"
-  ],
-  "trustedDependencies": [
-    "sharp",
-    "unrs-resolver"
-  ]
+	"name": "football-predictor",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "next dev",
+		"build": "prisma generate && prisma migrate deploy && next build",
+		"start": "next start",
+		"lint": "biome check .",
+		"lint:fix": "biome check --write .",
+		"format": "biome format --write .",
+		"db:migrate": "prisma migrate dev",
+		"db:seed": "tsx prisma/seed.ts",
+		"db:sync": "tsx scripts/sync.ts",
+		"db:studio": "prisma studio"
+	},
+	"dependencies": {
+		"@auth/prisma-adapter": "^2.11.1",
+		"@prisma/adapter-pg": "^7.7.0",
+		"@prisma/client": "^7.7.0",
+		"next": "16.2.3",
+		"next-auth": "^5.0.0-beta.30",
+		"pg": "^8.20.0",
+		"react": "19.2.4",
+		"react-dom": "19.2.4",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.11",
+		"@tailwindcss/postcss": "^4",
+		"@types/node": "^20",
+		"@types/pg": "^8.20.0",
+		"@types/react": "^19",
+		"@types/react-dom": "^19",
+		"dotenv": "^17.4.1",
+		"prisma": "^7.7.0",
+		"tailwindcss": "^4",
+		"tsx": "^4.21.0",
+		"typescript": "^5"
+	},
+	"ignoreScripts": [
+		"sharp",
+		"unrs-resolver"
+	],
+	"trustedDependencies": [
+		"sharp",
+		"unrs-resolver"
+	]
 }
