@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PredictionForm } from "@/components/PredictionForm";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { toFlag } from "@/lib/football-data";
 
 export default async function MatchPage({
 	params,
@@ -50,7 +51,7 @@ export default async function MatchPage({
 
 				<div className="flex items-center justify-between gap-4">
 					<div className="flex flex-1 flex-col items-center gap-2">
-						<span className="text-5xl">{match.homeFlag}</span>
+						<span className="text-5xl">{toFlag(match.homeTeam)}</span>
 						<span className="text-center font-semibold">{match.homeTeam}</span>
 					</div>
 
@@ -70,7 +71,7 @@ export default async function MatchPage({
 					</div>
 
 					<div className="flex flex-1 flex-col items-center gap-2">
-						<span className="text-5xl">{match.awayFlag}</span>
+						<span className="text-5xl">{toFlag(match.awayTeam)}</span>
 						<span className="text-center font-semibold">{match.awayTeam}</span>
 					</div>
 				</div>

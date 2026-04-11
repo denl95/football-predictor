@@ -4,7 +4,6 @@ import { Pool } from "pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import {
 	fetchWCMatches,
-	toFlag,
 	toGroupLabel,
 	toStage,
 	toStatus,
@@ -36,8 +35,6 @@ async function main() {
 				externalId: String(m.id),
 				homeTeam,
 				awayTeam,
-				homeFlag: toFlag(homeTeam),
-				awayFlag: toFlag(awayTeam),
 				group: toGroupLabel(m.group),
 				stage: toStage(m.stage) as "GROUP",
 				scheduledAt: new Date(m.utcDate),

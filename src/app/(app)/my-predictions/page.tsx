@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { toFlag } from "@/lib/football-data";
 
 export default async function MyPredictionsPage() {
 	const session = await auth();
@@ -85,11 +86,11 @@ export default async function MyPredictionsPage() {
 									>
 										<div className="flex flex-1 flex-col gap-0.5">
 											<div className="flex items-center gap-2 text-sm font-semibold">
-												<span>{p.match.homeFlag}</span>
+												<span>{toFlag(p.match.homeTeam)}</span>
 												<span>{p.match.homeTeam}</span>
 												<span className="text-foreground-muted">vs</span>
 												<span>{p.match.awayTeam}</span>
-												<span>{p.match.awayFlag}</span>
+												<span>{toFlag(p.match.awayTeam)}</span>
 											</div>
 											<div className="text-xs text-foreground-muted">
 												{p.match.group} ·{" "}

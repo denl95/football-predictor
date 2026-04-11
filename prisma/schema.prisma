@@ -81,8 +81,6 @@ model Match {
   externalId  String?     @unique
   homeTeam    String
   awayTeam    String
-  homeFlag    String?
-  awayFlag    String?
   group       String?
   stage       MatchStage  @default(GROUP)
   scheduledAt DateTime

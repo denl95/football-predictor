@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import {
 	fetchWCMatches,
-	toFlag,
 	toGroupLabel,
 	toStage,
 	toStatus,
@@ -63,8 +62,6 @@ export async function GET(request: NextRequest) {
 					externalId,
 					homeTeam,
 					awayTeam,
-					homeFlag: toFlag(homeTeam),
-					awayFlag: toFlag(awayTeam),
 					group: toGroupLabel(m.group),
 					stage: toStage(m.stage) as
 						| "GROUP"

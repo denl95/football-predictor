@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { toFlag } from "@/lib/football-data";
 
 type TeamStanding = {
 	team: string;
@@ -29,8 +30,8 @@ export default async function GroupsPage() {
 
 		// Register both teams (so they appear even with 0 matches played)
 		for (const [team, flag] of [
-			[m.homeTeam, m.homeFlag ?? "🏳"],
-			[m.awayTeam, m.awayFlag ?? "🏳"],
+			[m.homeTeam, toFlag(m.homeTeam)],
+			[m.awayTeam, toFlag(m.awayTeam)],
 		] as [string, string][]) {
 			if (!groups[groupKey][team]) {
 				groups[groupKey][team] = {
@@ -128,15 +129,15 @@ export default async function GroupsPage() {
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="border-b border-border text-xs text-foreground-muted">
-									<th className="px-4 py-2 text-left font-medium">Team</th>
-									<th className="px-2 py-2 text-center font-medium">P</th>
-									<th className="px-2 py-2 text-center font-medium">W</th>
-									<th className="px-2 py-2 text-center font-medium">D</th>
-									<th className="px-2 py-2 text-center font-medium">L</th>
-									<th className="px-2 py-2 text-center font-medium">GF</th>
-									<th className="px-2 py-2 text-center font-medium">GA</th>
-									<th className="px-2 py-2 text-center font-medium">GD</th>
-									<th className="px-3 py-2 text-center font-medium">Pts</th>
+									<th className="py-2 pl-3 pr-1 text-left font-medium sm:pl-4 sm:pr-2">Team</th>
+									<th className="px-1 py-2 text-center font-medium sm:px-2">P</th>
+									<th className="px-1 py-2 text-center font-medium sm:px-2">W</th>
+									<th className="px-1 py-2 text-center font-medium sm:px-2">D</th>
+									<th className="px-1 py-2 text-center font-medium sm:px-2">L</th>
+									<th className="hidden px-1 py-2 text-center font-medium sm:table-cell sm:px-2">GF</th>
+									<th className="hidden px-1 py-2 text-center font-medium sm:table-cell sm:px-2">GA</th>
+									<th className="px-1 py-2 text-center font-medium sm:px-2">GD</th>
+									<th className="py-2 pl-1 pr-3 text-center font-medium sm:pl-2 sm:pr-3">Pts</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -145,34 +146,34 @@ export default async function GroupsPage() {
 										key={s.team}
 										className={`border-b border-border/50 last:border-b-0 ${i < 2 ? "bg-accent/5" : ""}`}
 									>
-										<td className="px-4 py-2.5">
-											<div className="flex items-center gap-2">
-												<span className="shrink-0">{s.flag}</span>
-												<span className="font-medium whitespace-nowrap">{s.team}</span>
+										<td className="py-2.5 pl-3 pr-1 sm:pl-4 sm:pr-2">
+											<div className="flex items-center gap-1.5 sm:gap-2">
+												<span className="shrink-0 text-base leading-none">{s.flag}</span>
+												<span className="font-medium leading-tight">{s.team}</span>
 											</div>
 										</td>
-										<td className="px-2 py-2.5 text-center tabular-nums text-foreground-muted">
+										<td className="px-1 py-2.5 text-center tabular-nums text-foreground-muted sm:px-2">
 											{s.played}
 										</td>
-										<td className="px-2 py-2.5 text-center tabular-nums">
+										<td className="px-1 py-2.5 text-center tabular-nums sm:px-2">
 											{s.won}
 										</td>
-										<td className="px-2 py-2.5 text-center tabular-nums">
+										<td className="px-1 py-2.5 text-center tabular-nums sm:px-2">
 											{s.drawn}
 										</td>
-										<td className="px-2 py-2.5 text-center tabular-nums">
+										<td className="px-1 py-2.5 text-center tabular-nums sm:px-2">
 											{s.lost}
 										</td>
-										<td className="px-2 py-2.5 text-center tabular-nums">
+										<td className="hidden px-1 py-2.5 text-center tabular-nums sm:table-cell sm:px-2">
 											{s.gf}
 										</td>
-										<td className="px-2 py-2.5 text-center tabular-nums">
+										<td className="hidden px-1 py-2.5 text-center tabular-nums sm:table-cell sm:px-2">
 											{s.ga}
 										</td>
-										<td className="px-2 py-2.5 text-center tabular-nums">
+										<td className="px-1 py-2.5 text-center tabular-nums sm:px-2">
 											{s.gd > 0 ? `+${s.gd}` : s.gd}
 										</td>
-										<td className="px-3 py-2.5 text-center font-bold tabular-nums text-accent">
+										<td className="py-2.5 pl-1 pr-3 text-center font-bold tabular-nums text-accent sm:pl-2 sm:pr-3">
 											{s.points}
 										</td>
 									</tr>

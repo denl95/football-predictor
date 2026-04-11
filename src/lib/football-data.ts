@@ -162,6 +162,12 @@ export const FLAG_MAP: Record<string, string> = {
 	Cuba: "🇨🇺",
 	// Oceania
 	"New Zealand": "🇳🇿",
+	// Alternate spellings / abbreviations used by football-data.org
+	"Bosnia-Herzegovina": "🇧🇦",
+	"Cape Verde Islands": "🇨🇻",
+	"Congo DR": "🇨🇩",
+	Curaçao: "🇨🇼",
+	Curacao: "🇨🇼",
 	// Other
 	Israel: "🇮🇱",
 };
