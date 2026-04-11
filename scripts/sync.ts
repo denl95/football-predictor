@@ -15,7 +15,6 @@ import { Pool } from "pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import {
 	fetchWCMatches,
-	toFlag,
 	toGroupLabel,
 	toStage,
 	toStatus,
@@ -63,8 +62,6 @@ async function main() {
 					externalId,
 					homeTeam,
 					awayTeam,
-					homeFlag: toFlag(homeTeam),
-					awayFlag: toFlag(awayTeam),
 					group: toGroupLabel(m.group),
 					stage: toStage(m.stage) as "GROUP" | "ROUND_OF_32" | "ROUND_OF_16" | "QUARTER_FINAL" | "SEMI_FINAL" | "FINAL",
 					scheduledAt: new Date(m.utcDate),
