@@ -113,7 +113,7 @@ export default async function GroupsPage() {
 		<div className="flex flex-col gap-6">
 			<h1 className="text-2xl font-bold">Groups</h1>
 
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			<div className="grid gap-4 sm:grid-cols-2">
 				{sortedGroups.map(({ groupName, standings }) => (
 					<div
 						key={groupName}
@@ -145,9 +145,11 @@ export default async function GroupsPage() {
 										key={s.team}
 										className={`border-b border-border/50 last:border-b-0 ${i < 2 ? "bg-accent/5" : ""}`}
 									>
-										<td className="flex items-center gap-2 px-4 py-2.5">
-											<span>{s.flag}</span>
-											<span className="font-medium">{s.team}</span>
+										<td className="px-4 py-2.5">
+											<div className="flex items-center gap-2">
+												<span className="shrink-0">{s.flag}</span>
+												<span className="font-medium whitespace-nowrap">{s.team}</span>
+											</div>
 										</td>
 										<td className="px-2 py-2.5 text-center tabular-nums text-foreground-muted">
 											{s.played}
