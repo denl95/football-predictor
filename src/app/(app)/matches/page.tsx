@@ -97,7 +97,22 @@ function MatchCard({ match }: { match: MatchWithPrediction }) {
 	);
 }
 
-export default async function MatchesPage() {
+function dayLabel(isoDate: string) {
+	return new Date(isoDate).toLocaleDateString("en-GB", {
+		weekday: "short",
+		day: "numeric",
+		month: "short",
+	});
+}
+
+export default async function MatchesPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ view?: string }>;
+}) {
+	const { view } = await searchParams;
+	const byDay = view !== "group";
+
 	const session = await auth();
 
 	const matches = await prisma.match.findMany({
@@ -116,10 +131,11 @@ export default async function MatchesPage() {
 			: null,
 	}));
 
-	// Group by stage / group label
 	const grouped = matchesWithPred.reduce<Record<string, MatchWithPrediction[]>>(
 		(acc, m) => {
-			const key = m.group ?? m.stage;
+			const key = byDay
+				? m.scheduledAt.toISOString().slice(0, 10)
+				: (m.group ?? m.stage);
 			(acc[key] ??= []).push(m);
 			return acc;
 		},
@@ -131,6 +147,11 @@ export default async function MatchesPage() {
 		(m) => m.status === "UPCOMING",
 	).length;
 
+	const tabs = [
+		{ label: "By Day", href: "/matches", active: byDay },
+		{ label: "By Group", href: "/matches?view=group", active: !byDay },
+	];
+
 	return (
 		<div className="flex flex-col gap-8">
 			<div className="flex flex-col gap-1">
@@ -140,10 +161,26 @@ export default async function MatchesPage() {
 				</p>
 			</div>
 
-			{Object.entries(grouped).map(([group, groupMatches]) => (
-				<section key={group} className="flex flex-col gap-3">
+			<div className="flex gap-1 rounded-xl border border-border bg-surface p-1 w-fit">
+				{tabs.map((tab) => (
+					<Link
+						key={tab.href}
+						href={tab.href}
+						className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+							tab.active
+								? "bg-surface-2 text-foreground"
+								: "text-foreground-muted hover:text-foreground"
+						}`}
+					>
+						{tab.label}
+					</Link>
+				))}
+			</div>
+
+			{Object.entries(grouped).map(([key, groupMatches]) => (
+				<section key={key} className="flex flex-col gap-3">
 					<h2 className="text-sm font-semibold uppercase tracking-widest text-foreground-muted">
-						{group}
+						{byDay ? dayLabel(key) : key}
 					</h2>
 					<div className="grid gap-3 sm:grid-cols-2">
 						{groupMatches.map((m) => (
