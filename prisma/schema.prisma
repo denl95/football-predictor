@@ -18,9 +18,11 @@ model User {
   passwordHash  String?
   accounts      Account[]
   sessions      Session[]
-  predictions   Prediction[]
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  predictions       Prediction[]
+  createdLeagues    League[]       @relation("CreatedLeagues")
+  leagueMemberships LeagueMember[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 }
 
 model Account {
@@ -105,4 +107,24 @@ model Prediction {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, matchId])
+}
+
+model League {
+  id        String         @id @default(cuid())
+  name      String
+  slug      String         @unique
+  createdBy String
+  creator   User           @relation("CreatedLeagues", fields: [createdBy], references: [id])
+  members   LeagueMember[]
+  createdAt DateTime       @default(now())
+}
+
+model LeagueMember {
+  leagueId String
+  userId   String
+  league   League   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@id([leagueId, userId])
 }
