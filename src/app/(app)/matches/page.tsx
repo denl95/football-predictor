@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { Flag } from "@/components/Flag";
 import type { Match, Prediction } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { toFlag } from "@/lib/football-data";
 
 type MatchWithPrediction = Match & { prediction?: Prediction | null };
 
@@ -49,7 +49,7 @@ function MatchCard({ match }: { match: MatchWithPrediction }) {
 
 			<div className="flex items-center justify-between gap-4">
 				<div className="flex flex-1 items-center gap-2">
-					<span className="text-2xl">{toFlag(match.homeTeam)}</span>
+					<Flag name={match.homeTeam} />
 					<span className="font-semibold">{match.homeTeam}</span>
 				</div>
 
@@ -67,7 +67,7 @@ function MatchCard({ match }: { match: MatchWithPrediction }) {
 
 				<div className="flex flex-1 items-center justify-end gap-2">
 					<span className="font-semibold">{match.awayTeam}</span>
-					<span className="text-2xl">{toFlag(match.awayTeam)}</span>
+					<Flag name={match.awayTeam} />
 				</div>
 			</div>
 

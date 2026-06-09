@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
+import { Flag } from "@/components/Flag";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { toFlag } from "@/lib/football-data";
 
 export default async function PlayerPage({
 	params,
@@ -176,11 +176,11 @@ export default async function PlayerPage({
 									{/* Match info */}
 									<div className="flex flex-col items-center gap-0.5 text-center">
 										<span className="text-xs font-medium">
-											{toFlag(match.homeTeam)} {match.homeTeam}
+											<Flag name={match.homeTeam} /> {match.homeTeam}
 										</span>
 										<span className="text-xs text-foreground-muted">vs</span>
 										<span className="text-xs font-medium">
-											{match.awayTeam} {toFlag(match.awayTeam)}
+											{match.awayTeam} <Flag name={match.awayTeam} />
 										</span>
 										{isFinished && (
 											<span className="mt-0.5 text-xs tabular-nums font-bold text-foreground-muted">

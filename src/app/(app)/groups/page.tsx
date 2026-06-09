@@ -1,9 +1,8 @@
+import { Flag } from "@/components/Flag";
 import { prisma } from "@/lib/db";
-import { toFlag } from "@/lib/football-data";
 
 type TeamStanding = {
 	team: string;
-	flag: string;
 	played: number;
 	won: number;
 	drawn: number;
@@ -29,14 +28,10 @@ export default async function GroupsPage() {
 		if (!groups[groupKey]) groups[groupKey] = {};
 
 		// Register both teams (so they appear even with 0 matches played)
-		for (const [team, flag] of [
-			[m.homeTeam, toFlag(m.homeTeam)],
-			[m.awayTeam, toFlag(m.awayTeam)],
-		] as [string, string][]) {
+		for (const team of [m.homeTeam, m.awayTeam]) {
 			if (!groups[groupKey][team]) {
 				groups[groupKey][team] = {
 					team,
-					flag,
 					played: 0,
 					won: 0,
 					drawn: 0,
@@ -166,9 +161,7 @@ export default async function GroupsPage() {
 									>
 										<td className="py-2.5 pl-3 pr-1 sm:pl-4 sm:pr-2">
 											<div className="flex items-center gap-1.5 sm:gap-2">
-												<span className="shrink-0 text-base leading-none">
-													{s.flag}
-												</span>
+												<Flag name={s.team} />
 												<span className="font-medium leading-tight">
 													{s.team}
 												</span>
