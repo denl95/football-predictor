@@ -30,12 +30,6 @@ export async function Navbar() {
 						Groups
 					</Link>
 					<Link
-						href="/leaderboard"
-						className="rounded-lg px-3 py-1.5 text-foreground-muted hover:bg-surface-2 hover:text-foreground transition-colors"
-					>
-						Leaderboard
-					</Link>
-					<Link
 						href="/leagues"
 						className="rounded-lg px-3 py-1.5 text-foreground-muted hover:bg-surface-2 hover:text-foreground transition-colors"
 					>

@@ -23,9 +23,21 @@ export default async function MatchPage({
 		: null;
 
 	const allPredictions =
-		match.status === "FINISHED"
+		match.status === "FINISHED" && session?.user?.id
 			? await prisma.prediction.findMany({
-					where: { matchId: id, points: { not: null } },
+					where: {
+						matchId: id,
+						points: { not: null },
+						user: {
+							leagueMemberships: {
+								some: {
+									league: {
+										members: { some: { userId: session.user.id } },
+									},
+								},
+							},
+						},
+					},
 					include: {
 						user: { select: { id: true, name: true, image: true } },
 					},
@@ -122,7 +134,7 @@ export default async function MatchPage({
 				<div className="overflow-hidden rounded-2xl border border-border bg-surface">
 					<div className="border-b border-border px-5 py-3">
 						<h2 className="text-sm font-semibold uppercase tracking-widest text-foreground-muted">
-							How everyone predicted
+							League predictions
 						</h2>
 					</div>
 					<ul>
