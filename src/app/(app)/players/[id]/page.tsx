@@ -164,9 +164,7 @@ export default async function PlayerPage({
 												<span className="tabular-nums font-semibold text-sm">
 													{myPred.homeScore} – {myPred.awayScore}
 												</span>
-												<PointsBadge
-													points={isFinished ? myPred.points : undefined}
-												/>
+												{isFinished && <PointsBadge points={myPred.points} />}
 											</>
 										) : (
 											<span className="text-xs text-foreground-muted">–</span>
@@ -180,7 +178,7 @@ export default async function PlayerPage({
 										</span>
 										<span className="text-xs text-foreground-muted">vs</span>
 										<span className="text-xs font-medium">
-											{match.awayTeam} <Flag name={match.awayTeam} />
+											<Flag name={match.awayTeam} /> {match.awayTeam}
 										</span>
 										{isFinished && (
 											<span className="mt-0.5 text-xs tabular-nums font-bold text-foreground-muted">
@@ -198,9 +196,9 @@ export default async function PlayerPage({
 														? `${theirPred.homeScore} – ${theirPred.awayScore}`
 														: "?"}
 												</span>
-												<PointsBadge
-													points={isFinished ? theirPred.points : undefined}
-												/>
+												{isFinished && (
+													<PointsBadge points={theirPred.points} />
+												)}
 											</>
 										) : (
 											<span className="text-xs text-foreground-muted">–</span>
