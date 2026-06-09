@@ -96,7 +96,11 @@ export default async function LeaguePage({
 									className={`border-b border-border last:border-b-0 transition-colors ${isCurrentUser ? "bg-accent/10" : "hover:bg-surface-2"}`}
 								>
 									<Link
-										href={isCurrentUser ? "/my-predictions" : `/players/${player.id}`}
+										href={
+											isCurrentUser
+												? "/my-predictions"
+												: `/players/${player.id}`
+										}
 										className="flex items-center gap-4 px-5 py-4"
 									>
 										<span className="w-8 text-center text-lg">
