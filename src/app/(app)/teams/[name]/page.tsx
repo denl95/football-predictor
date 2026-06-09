@@ -222,13 +222,7 @@ export default async function TeamPage({
 										key={player.id}
 										className="flex items-center gap-3 border-b border-border/50 px-4 py-3 last:border-b-0"
 									>
-										<div className="flex flex-1 flex-col gap-0.5">
-											<span className="text-sm font-semibold">{player.name}</span>
-											<span className="flex items-center gap-1 text-xs text-foreground-muted">
-												<Flag name={player.nationality} />
-												{player.nationality}
-											</span>
-										</div>
+										<span className="flex-1 text-sm font-semibold">{player.name}</span>
 										<span className="text-xs text-foreground-muted">
 											{player.dateOfBirth
 												? `${calcAge(player.dateOfBirth)} yrs`
