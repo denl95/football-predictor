@@ -19,6 +19,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   predictions       Prediction[]
+  bracketPicks      BracketPick[]
   createdLeagues    League[]       @relation("CreatedLeagues")
   leagueMemberships LeagueMember[]
   createdAt         DateTime       @default(now())
@@ -127,4 +128,26 @@ model LeagueMember {
   joinedAt DateTime @default(now())
 
   @@id([leagueId, userId])
+}
+
+enum BracketStage {
+  ROUND_OF_32
+  ROUND_OF_16
+  QUARTER_FINAL
+  SEMI_FINAL
+  FINAL
+  CHAMPION
+}
+
+model BracketPick {
+  id        String       @id @default(cuid())
+  userId    String
+  stage     BracketStage
+  team      String
+  points    Int?
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([userId, stage, team])
 }

@@ -52,8 +52,8 @@ export async function Navbar() {
 				</div>
 
 				{/* Mobile nav row */}
-				<div className="md:hidden border-t border-border/40 py-1.5">
-					<NavLinks className="justify-around" />
+				<div className="md:hidden overflow-x-auto border-t border-border/40 py-1.5 -mx-4 px-2">
+					<NavLinks className="min-w-max" />
 				</div>
 			</div>
 		</header>
