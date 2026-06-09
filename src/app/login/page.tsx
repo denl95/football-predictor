@@ -1,7 +1,7 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Suspense, useActionState, useState } from "react";
 import { registerUser } from "@/actions/auth";
 
@@ -190,7 +190,10 @@ function LoginContent() {
 						No account?{" "}
 						<button
 							type="button"
-							onClick={() => { setMode("register"); setRegistered(false); }}
+							onClick={() => {
+								setMode("register");
+								setRegistered(false);
+							}}
 							className="text-accent hover:underline"
 						>
 							Register

@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
 	fetchWCMatches,
@@ -77,7 +77,11 @@ export async function GET(request: NextRequest) {
 				},
 			});
 
-			if (newStatus === "FINISHED" && homeScore !== null && awayScore !== null) {
+			if (
+				newStatus === "FINISHED" &&
+				homeScore !== null &&
+				awayScore !== null
+			) {
 				await awardPoints(created.id, homeScore, awayScore);
 			}
 

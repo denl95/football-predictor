@@ -33,7 +33,10 @@ export async function registerUser(
 
 	const existing = await prisma.user.findUnique({ where: { email } });
 	if (existing) {
-		return { success: false, error: "An account with this email already exists" };
+		return {
+			success: false,
+			error: "An account with this email already exists",
+		};
 	}
 
 	const passwordHash = await bcrypt.hash(password, 12);

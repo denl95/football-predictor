@@ -25,10 +25,19 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-async function awardPoints(matchId: string, homeScore: number, awayScore: number) {
+async function awardPoints(
+	matchId: string,
+	homeScore: number,
+	awayScore: number,
+) {
 	const predictions = await prisma.prediction.findMany({ where: { matchId } });
 	for (const p of predictions) {
-		const points = calculatePoints(p.homeScore, p.awayScore, homeScore, awayScore);
+		const points = calculatePoints(
+			p.homeScore,
+			p.awayScore,
+			homeScore,
+			awayScore,
+		);
 		await prisma.prediction.update({ where: { id: p.id }, data: { points } });
 	}
 }
@@ -63,7 +72,13 @@ async function main() {
 					homeTeam,
 					awayTeam,
 					group: toGroupLabel(m.group),
-					stage: toStage(m.stage) as "GROUP" | "ROUND_OF_32" | "ROUND_OF_16" | "QUARTER_FINAL" | "SEMI_FINAL" | "FINAL",
+					stage: toStage(m.stage) as
+						| "GROUP"
+						| "ROUND_OF_32"
+						| "ROUND_OF_16"
+						| "QUARTER_FINAL"
+						| "SEMI_FINAL"
+						| "FINAL",
 					scheduledAt: new Date(m.utcDate),
 					status: newStatus as "UPCOMING" | "LIVE" | "FINISHED",
 					homeScore: homeScore ?? undefined,
@@ -72,8 +87,14 @@ async function main() {
 			});
 
 			// If already finished when first inserted, award points immediately
-			if (newStatus === "FINISHED" && homeScore !== null && awayScore !== null) {
-				const created = await prisma.match.findUnique({ where: { externalId } });
+			if (
+				newStatus === "FINISHED" &&
+				homeScore !== null &&
+				awayScore !== null
+			) {
+				const created = await prisma.match.findUnique({
+					where: { externalId },
+				});
 				if (created) await awardPoints(created.id, homeScore, awayScore);
 			}
 
@@ -98,7 +119,9 @@ async function main() {
 
 		if (wasFinished && homeScore !== null && awayScore !== null) {
 			await awardPoints(existing.id, homeScore, awayScore);
-			console.log(`  ✓ finished: ${homeTeam} ${homeScore}–${awayScore} ${awayTeam}`);
+			console.log(
+				`  ✓ finished: ${homeTeam} ${homeScore}–${awayScore} ${awayTeam}`,
+			);
 		} else if (newStatus === "LIVE") {
 			console.log(`  ~ live: ${homeTeam} vs ${awayTeam}`);
 		}

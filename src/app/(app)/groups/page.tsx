@@ -129,15 +129,33 @@ export default async function GroupsPage() {
 						<table className="w-full text-sm">
 							<thead>
 								<tr className="border-b border-border text-xs text-foreground-muted">
-									<th className="py-2 pl-3 pr-1 text-left font-medium sm:pl-4 sm:pr-2">Team</th>
-									<th className="px-1 py-2 text-center font-medium sm:px-2">P</th>
-									<th className="px-1 py-2 text-center font-medium sm:px-2">W</th>
-									<th className="px-1 py-2 text-center font-medium sm:px-2">D</th>
-									<th className="px-1 py-2 text-center font-medium sm:px-2">L</th>
-									<th className="hidden px-1 py-2 text-center font-medium sm:table-cell sm:px-2">GF</th>
-									<th className="hidden px-1 py-2 text-center font-medium sm:table-cell sm:px-2">GA</th>
-									<th className="px-1 py-2 text-center font-medium sm:px-2">GD</th>
-									<th className="py-2 pl-1 pr-3 text-center font-medium sm:pl-2 sm:pr-3">Pts</th>
+									<th className="py-2 pl-3 pr-1 text-left font-medium sm:pl-4 sm:pr-2">
+										Team
+									</th>
+									<th className="px-1 py-2 text-center font-medium sm:px-2">
+										P
+									</th>
+									<th className="px-1 py-2 text-center font-medium sm:px-2">
+										W
+									</th>
+									<th className="px-1 py-2 text-center font-medium sm:px-2">
+										D
+									</th>
+									<th className="px-1 py-2 text-center font-medium sm:px-2">
+										L
+									</th>
+									<th className="hidden px-1 py-2 text-center font-medium sm:table-cell sm:px-2">
+										GF
+									</th>
+									<th className="hidden px-1 py-2 text-center font-medium sm:table-cell sm:px-2">
+										GA
+									</th>
+									<th className="px-1 py-2 text-center font-medium sm:px-2">
+										GD
+									</th>
+									<th className="py-2 pl-1 pr-3 text-center font-medium sm:pl-2 sm:pr-3">
+										Pts
+									</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -148,8 +166,12 @@ export default async function GroupsPage() {
 									>
 										<td className="py-2.5 pl-3 pr-1 sm:pl-4 sm:pr-2">
 											<div className="flex items-center gap-1.5 sm:gap-2">
-												<span className="shrink-0 text-base leading-none">{s.flag}</span>
-												<span className="font-medium leading-tight">{s.team}</span>
+												<span className="shrink-0 text-base leading-none">
+													{s.flag}
+												</span>
+												<span className="font-medium leading-tight">
+													{s.team}
+												</span>
 											</div>
 										</td>
 										<td className="px-1 py-2.5 text-center tabular-nums text-foreground-muted sm:px-2">
