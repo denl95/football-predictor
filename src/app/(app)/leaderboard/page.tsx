@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -54,53 +55,62 @@ export default async function LeaderboardPage() {
 							return (
 								<li
 									key={player.id}
-									className={`flex items-center gap-4 border-b border-border px-5 py-4 last:border-b-0 transition-colors ${isCurrentUser ? "bg-accent/10" : "hover:bg-surface-2"}`}
+									className={`border-b border-border last:border-b-0 transition-colors ${isCurrentUser ? "bg-accent/10" : "hover:bg-surface-2"}`}
 								>
-									<span className="w-8 text-center text-lg">
-										{medals[i] ?? (
-											<span className="text-foreground-muted text-sm">
-												{i + 1}
-											</span>
-										)}
-									</span>
-
-									{player.image ? (
-										<Image
-											src={player.image}
-											alt={player.name}
-											width={36}
-											height={36}
-											className="rounded-full"
-										/>
-									) : (
-										<div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
-											{player.name[0]?.toUpperCase()}
-										</div>
-									)}
-
-									<div className="flex-1">
-										<div className="flex items-center gap-2 font-semibold">
-											{player.name}
-											{isCurrentUser && (
-												<span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs text-accent">
-													you
+									<Link
+										href={
+											isCurrentUser
+												? "/my-predictions"
+												: `/players/${player.id}`
+										}
+										className="flex items-center gap-4 px-5 py-4"
+									>
+										<span className="w-8 text-center text-lg">
+											{medals[i] ?? (
+												<span className="text-foreground-muted text-sm">
+													{i + 1}
 												</span>
 											)}
-										</div>
-										<div className="text-xs text-foreground-muted">
-											{player.predictionsScored} result
-											{player.predictionsScored !== 1 ? "s" : ""} scored
-										</div>
-									</div>
-
-									<div
-										className={`text-xl font-bold tabular-nums ${i === 0 ? "text-gold" : i < 3 ? "text-accent" : "text-foreground"}`}
-									>
-										{player.totalPoints}
-										<span className="ml-1 text-sm font-normal text-foreground-muted">
-											pts
 										</span>
-									</div>
+
+										{player.image ? (
+											<Image
+												src={player.image}
+												alt={player.name}
+												width={36}
+												height={36}
+												className="rounded-full"
+											/>
+										) : (
+											<div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
+												{player.name[0]?.toUpperCase()}
+											</div>
+										)}
+
+										<div className="flex-1">
+											<div className="flex items-center gap-2 font-semibold">
+												{player.name}
+												{isCurrentUser && (
+													<span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs text-accent">
+														you
+													</span>
+												)}
+											</div>
+											<div className="text-xs text-foreground-muted">
+												{player.predictionsScored} result
+												{player.predictionsScored !== 1 ? "s" : ""} scored
+											</div>
+										</div>
+
+										<div
+											className={`text-xl font-bold tabular-nums ${i === 0 ? "text-gold" : i < 3 ? "text-accent" : "text-foreground"}`}
+										>
+											{player.totalPoints}
+											<span className="ml-1 text-sm font-normal text-foreground-muted">
+												pts
+											</span>
+										</div>
+									</Link>
 								</li>
 							);
 						})}
