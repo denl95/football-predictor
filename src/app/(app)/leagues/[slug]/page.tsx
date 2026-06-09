@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/CopyButton";
+import { LeaderboardChart } from "@/components/LeaderboardChart";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -56,6 +57,51 @@ export default async function LeaguePage({
 				b.predictionsScored - a.predictionsScored,
 		);
 
+	// Build chart data: cumulative points over time, scoped to league members
+	const memberIds = league.members.map((m) => m.userId);
+	const playerNames = ranked.map((u) => u.name);
+
+	const finishedPredictions = await prisma.prediction.findMany({
+		where: {
+			points: { not: null },
+			match: { status: "FINISHED" },
+			userId: { in: memberIds },
+		},
+		select: {
+			points: true,
+			user: { select: { name: true } },
+			match: { select: { scheduledAt: true } },
+		},
+		orderBy: { match: { scheduledAt: "asc" } },
+	});
+
+	const cumulative: Record<string, number> = Object.fromEntries(
+		playerNames.map((n) => [n, 0]),
+	);
+	type DataPoint = Record<string, number | string>;
+	const byDate = new Map<string, DataPoint>();
+
+	for (const p of finishedPredictions) {
+		const date = p.match.scheduledAt.toLocaleDateString("en-GB", {
+			day: "numeric",
+			month: "short",
+		});
+		const name = p.user.name ?? "Anonymous";
+		cumulative[name] = (cumulative[name] ?? 0) + (p.points ?? 0);
+
+		const point = byDate.get(date);
+		if (point) {
+			point[name] = cumulative[name];
+		} else {
+			byDate.set(date, {
+				date,
+				...Object.fromEntries(playerNames.map((n) => [n, cumulative[n] ?? 0])),
+			});
+		}
+	}
+
+	const chartData = Array.from(byDate.values());
+
 	const h = await headers();
 	const host = h.get("host") ?? "";
 	const proto = h.get("x-forwarded-proto") ?? "https";
@@ -79,6 +125,8 @@ export default async function LeaguePage({
 				</span>
 				<CopyButton text={joinUrl} />
 			</div>
+
+			<LeaderboardChart data={chartData} players={playerNames} />
 
 			{/* Leaderboard */}
 			<div className="overflow-hidden rounded-2xl border border-border bg-surface">
