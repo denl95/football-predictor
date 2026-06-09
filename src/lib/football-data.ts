@@ -15,6 +15,41 @@ type FDMatchesResponse = {
 	matches: FDMatch[];
 };
 
+export type FDPlayer = {
+	id: number;
+	name: string;
+	position: "Goalkeeper" | "Defence" | "Midfield" | "Offence";
+	dateOfBirth: string;
+	nationality: string;
+};
+
+export type FDTeamDetail = {
+	id: number;
+	name: string;
+	shortName: string;
+	tla: string;
+	crest: string;
+	coach: { name: string; dateOfBirth: string | null; nationality: string } | null;
+	squad: FDPlayer[];
+};
+
+export async function fetchWCTeam(teamName: string): Promise<FDTeamDetail | null> {
+	const apiKey = process.env.FOOTBALL_DATA_API_KEY;
+	if (!apiKey) throw new Error("FOOTBALL_DATA_API_KEY is not set");
+
+	const res = await fetch(
+		"https://api.football-data.org/v4/competitions/WC/teams",
+		{
+			headers: { "X-Auth-Token": apiKey },
+			next: { revalidate: 3600 },
+		},
+	);
+	if (!res.ok) throw new Error(`football-data.org responded ${res.status}`);
+
+	const data = (await res.json()) as { teams: FDTeamDetail[] };
+	return data.teams.find((t) => t.name === teamName) ?? null;
+}
+
 export async function fetchWCMatches(): Promise<FDMatch[]> {
 	const apiKey = process.env.FOOTBALL_DATA_API_KEY;
 	if (!apiKey) throw new Error("FOOTBALL_DATA_API_KEY is not set");

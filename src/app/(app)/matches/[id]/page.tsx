@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Flag } from "@/components/Flag";
 import { PredictionForm } from "@/components/PredictionForm";
@@ -67,10 +68,13 @@ export default async function MatchPage({
 				</div>
 
 				<div className="flex items-center justify-between gap-4">
-					<div className="flex flex-1 flex-col items-center gap-2">
+					<Link
+						href={`/teams/${encodeURIComponent(match.homeTeam)}`}
+						className="flex flex-1 flex-col items-center gap-2 hover:text-accent transition-colors"
+					>
 						<Flag name={match.homeTeam} />
 						<span className="text-center font-semibold">{match.homeTeam}</span>
-					</div>
+					</Link>
 
 					<div className="flex flex-col items-center gap-1">
 						{isFinished ? (
@@ -87,10 +91,13 @@ export default async function MatchPage({
 						)}
 					</div>
 
-					<div className="flex flex-1 flex-col items-center gap-2">
+					<Link
+						href={`/teams/${encodeURIComponent(match.awayTeam)}`}
+						className="flex flex-1 flex-col items-center gap-2 hover:text-accent transition-colors"
+					>
 						<Flag name={match.awayTeam} />
 						<span className="text-center font-semibold">{match.awayTeam}</span>
-					</div>
+					</Link>
 				</div>
 			</div>
 
