@@ -50,6 +50,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 		signIn: "/login",
 	},
 	callbacks: {
+		authorized({ auth }) {
+			return !!auth?.user;
+		},
 		jwt({ token, user }) {
 			// On sign-in, persist user id into the token
 			if (user) token.sub = user.id;
