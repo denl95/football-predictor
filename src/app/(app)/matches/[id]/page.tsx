@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { PredictionForm } from "@/components/PredictionForm";
 import { auth } from "@/lib/auth";
@@ -21,12 +22,16 @@ export default async function MatchPage({
 			})
 		: null;
 
-	const allPredictions = await prisma.prediction.findMany({
-		where: { matchId: id, points: { not: null } },
-		include: { user: { select: { name: true, image: true } } },
-		orderBy: { points: "desc" },
-		take: 10,
-	});
+	const allPredictions =
+		match.status === "FINISHED"
+			? await prisma.prediction.findMany({
+					where: { matchId: id, points: { not: null } },
+					include: {
+						user: { select: { id: true, name: true, image: true } },
+					},
+					orderBy: { points: "desc" },
+				})
+			: [];
 
 	const isFinished = match.status === "FINISHED";
 	const canPredict = match.status === "UPCOMING";
@@ -114,33 +119,53 @@ export default async function MatchPage({
 
 			{/* Leaderboard for this match */}
 			{allPredictions.length > 0 && (
-				<div className="rounded-2xl border border-border bg-surface p-6">
-					<h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-foreground-muted">
-						Top predictions
-					</h2>
-					<ol className="flex flex-col gap-2">
-						{allPredictions.map((p, i) => (
-							<li
-								key={p.id}
-								className="flex items-center justify-between text-sm"
-							>
-								<span className="flex items-center gap-2">
-									<span className="w-5 text-foreground-muted">{i + 1}.</span>
-									<span>{p.user.name ?? "Anonymous"}</span>
-								</span>
-								<span className="flex items-center gap-3">
-									<span className="tabular-nums text-foreground-muted">
+				<div className="overflow-hidden rounded-2xl border border-border bg-surface">
+					<div className="border-b border-border px-5 py-3">
+						<h2 className="text-sm font-semibold uppercase tracking-widest text-foreground-muted">
+							How everyone predicted
+						</h2>
+					</div>
+					<ul>
+						{allPredictions.map((p) => {
+							const isCurrentUser = p.user.id === session?.user?.id;
+							return (
+								<li
+									key={p.id}
+									className={`flex items-center gap-3 border-b border-border px-5 py-3 last:border-b-0 ${isCurrentUser ? "bg-accent/10" : ""}`}
+								>
+									{p.user.image ? (
+										<Image
+											src={p.user.image}
+											alt={p.user.name ?? ""}
+											width={32}
+											height={32}
+											className="rounded-full"
+										/>
+									) : (
+										<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
+											{(p.user.name ?? "?")[0]?.toUpperCase()}
+										</div>
+									)}
+									<span className="flex-1 font-semibold text-sm">
+										{p.user.name ?? "Anonymous"}
+										{isCurrentUser && (
+											<span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-xs text-accent">
+												you
+											</span>
+										)}
+									</span>
+									<span className="tabular-nums text-sm text-foreground-muted">
 										{p.homeScore} – {p.awayScore}
 									</span>
 									<span
-										className={`font-bold ${p.points === 3 ? "text-gold" : (p.points ?? 0) >= 1 ? "text-accent" : "text-red-400"}`}
+										className={`w-12 rounded-lg px-2 py-0.5 text-center text-sm font-bold ${p.points === 3 ? "bg-gold/20 text-gold" : (p.points ?? 0) >= 1 ? "bg-accent/20 text-accent" : "bg-red-500/20 text-red-400"}`}
 									>
 										{p.points} pts
 									</span>
-								</span>
-							</li>
-						))}
-					</ol>
+								</li>
+							);
+						})}
+					</ul>
 				</div>
 			)}
 		</div>
