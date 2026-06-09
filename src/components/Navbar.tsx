@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
+import { NavLinks } from "@/components/NavLinks";
 
 export async function Navbar() {
 	const session = await auth();
@@ -16,32 +17,7 @@ export async function Navbar() {
 					<span className="hidden sm:block">WC 2026 Predictor</span>
 				</Link>
 
-				<nav className="flex items-center gap-1 text-sm">
-					<Link
-						href="/matches"
-						className="rounded-lg px-3 py-1.5 text-foreground-muted hover:bg-surface-2 hover:text-foreground transition-colors"
-					>
-						Matches
-					</Link>
-					<Link
-						href="/groups"
-						className="rounded-lg px-3 py-1.5 text-foreground-muted hover:bg-surface-2 hover:text-foreground transition-colors"
-					>
-						Groups
-					</Link>
-					<Link
-						href="/leagues"
-						className="rounded-lg px-3 py-1.5 text-foreground-muted hover:bg-surface-2 hover:text-foreground transition-colors"
-					>
-						Leagues
-					</Link>
-					<Link
-						href="/my-predictions"
-						className="rounded-lg px-3 py-1.5 text-foreground-muted hover:bg-surface-2 hover:text-foreground transition-colors"
-					>
-						My Predictions
-					</Link>
-				</nav>
+				<NavLinks />
 
 				{session?.user && (
 					<div className="flex items-center gap-3">
