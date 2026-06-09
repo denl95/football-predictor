@@ -36,6 +36,12 @@ export async function Navbar() {
 						Leaderboard
 					</Link>
 					<Link
+						href="/leagues"
+						className="rounded-lg px-3 py-1.5 text-foreground-muted hover:bg-surface-2 hover:text-foreground transition-colors"
+					>
+						Leagues
+					</Link>
+					<Link
 						href="/my-predictions"
 						className="rounded-lg px-3 py-1.5 text-foreground-muted hover:bg-surface-2 hover:text-foreground transition-colors"
 					>
