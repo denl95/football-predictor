@@ -12,6 +12,7 @@
 		"db:migrate": "prisma migrate dev",
 		"db:seed": "tsx prisma/seed.ts",
 		"db:sync": "tsx scripts/sync.ts",
+		"db:seed-leagues": "tsx scripts/seed-default-league.ts",
 		"db:studio": "prisma studio"
 	},
 	"dependencies": {
