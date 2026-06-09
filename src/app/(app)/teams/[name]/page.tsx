@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Flag } from "@/components/Flag";
 import { prisma } from "@/lib/db";
@@ -143,7 +144,7 @@ export default async function TeamPage({
 							Fixtures
 						</h2>
 					</div>
-					<ul>
+					<div>
 						{allMatches.map((m) => {
 							const isHome = m.homeTeam === teamName;
 							const opponent = isHome ? m.awayTeam : m.homeTeam;
@@ -166,9 +167,10 @@ export default async function TeamPage({
 										: "text-red-400";
 
 							return (
-								<li
+								<Link
 									key={m.id}
-									className="flex items-center gap-3 border-b border-border/50 px-4 py-3 last:border-b-0"
+									href={`/matches/${m.id}`}
+									className="flex items-center gap-3 border-b border-border/50 px-4 py-3 last:border-b-0 hover:bg-surface-2 transition-colors"
 								>
 									<span className="w-5 text-xs font-bold tabular-nums text-foreground-muted">
 										{isHome ? "H" : "A"}
@@ -196,10 +198,10 @@ export default async function TeamPage({
 											})}
 										</span>
 									)}
-								</li>
+								</Link>
 							);
 						})}
-					</ul>
+					</div>
 				</div>
 			)}
 
