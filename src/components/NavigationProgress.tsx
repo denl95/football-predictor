@@ -52,19 +52,31 @@ export function NavigationProgress() {
 		};
 	}, []);
 
+	const loading = visible && width < 100;
+
+	let barTransition: string;
+	if (width === 0) barTransition = "opacity 300ms ease-out";
+	else if (width === 100) barTransition = "width 150ms ease-out, opacity 300ms ease-out";
+	else barTransition = "width 300ms ease-out, opacity 150ms ease-in";
+
 	return (
-		<div
-			className="fixed top-0 left-0 z-[200] h-[2px] bg-accent"
-			style={{
-				width: `${width}%`,
-				opacity: visible ? 1 : 0,
-				transition:
-					width === 0
-						? "opacity 300ms ease-out"
-						: width === 100
-							? "width 150ms ease-out, opacity 300ms ease-out"
-							: "width 300ms ease-out, opacity 150ms ease-in",
-			}}
-		/>
+		<>
+			<div
+				className="fixed top-0 left-0 z-200 h-0.5 bg-accent"
+				style={{
+					width: `${width}%`,
+					opacity: visible ? 1 : 0,
+					transition: barTransition,
+				}}
+			/>
+			<div
+				className="fixed bottom-5 right-5 z-200 h-5 w-5 rounded-full border-2 border-accent border-t-transparent animate-spin"
+				style={{
+					opacity: loading ? 1 : 0,
+					transition: "opacity 150ms ease-out",
+					pointerEvents: "none",
+				}}
+			/>
+		</>
 	);
 }

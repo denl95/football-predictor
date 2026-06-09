@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Flag } from "@/components/Flag";
 import { prisma } from "@/lib/db";
 
@@ -160,12 +161,15 @@ export default async function GroupsPage() {
 										className={`border-b border-border/50 last:border-b-0 ${i < 2 ? "bg-accent/5" : ""}`}
 									>
 										<td className="py-2.5 pl-3 pr-1 sm:pl-4 sm:pr-2">
-											<div className="flex items-center gap-1.5 sm:gap-2">
+											<Link
+												href={`/teams/${encodeURIComponent(s.team)}`}
+												className="flex items-center gap-1.5 sm:gap-2 hover:text-accent transition-colors"
+											>
 												<Flag name={s.team} />
 												<span className="font-medium leading-tight">
 													{s.team}
 												</span>
-											</div>
+											</Link>
 										</td>
 										<td className="px-1 py-2.5 text-center tabular-nums text-foreground-muted sm:px-2">
 											{s.played}
