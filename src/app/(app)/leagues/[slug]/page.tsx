@@ -1,0 +1,153 @@
+import { headers } from "next/headers";
+import Image from "next/image";
+import { notFound } from "next/navigation";
+import { CopyButton } from "@/components/CopyButton";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+
+export default async function LeaguePage({
+	params,
+}: {
+	params: Promise<{ slug: string }>;
+}) {
+	const { slug } = await params;
+	const session = await auth();
+	if (!session?.user?.id) return null;
+
+	const league = await prisma.league.findUnique({
+		where: { slug },
+		include: {
+			members: {
+				include: {
+					user: {
+						select: {
+							id: true,
+							name: true,
+							image: true,
+							predictions: {
+								where: { points: { not: null } },
+								select: { points: true },
+							},
+						},
+					},
+				},
+			},
+		},
+	});
+
+	if (!league) notFound();
+
+	const ranked = league.members
+		.map(({ user }) => ({
+			id: user.id,
+			name: user.name ?? "Anonymous",
+			image: user.image,
+			totalPoints: user.predictions.reduce(
+				(sum, p) => sum + (p.points ?? 0),
+				0,
+			),
+			predictionsScored: user.predictions.length,
+		}))
+		.sort(
+			(a, b) =>
+				b.totalPoints - a.totalPoints ||
+				b.predictionsScored - a.predictionsScored,
+		);
+
+	const h = await headers();
+	const host = h.get("host") ?? "";
+	const proto = h.get("x-forwarded-proto") ?? "https";
+	const joinUrl = `${proto}://${host}/leagues/join/${slug}`;
+
+	const medals = ["🥇", "🥈", "🥉"];
+
+	return (
+		<div className="mx-auto flex max-w-2xl flex-col gap-6">
+			<div className="flex flex-col gap-1">
+				<h1 className="text-2xl font-bold">{league.name}</h1>
+				<p className="text-sm text-foreground-muted">
+					{ranked.length} member{ranked.length !== 1 ? "s" : ""}
+				</p>
+			</div>
+
+			{/* Join link */}
+			<div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3">
+				<span className="flex-1 truncate font-mono text-sm text-foreground-muted">
+					{joinUrl}
+				</span>
+				<CopyButton text={joinUrl} />
+			</div>
+
+			{/* Leaderboard */}
+			<div className="overflow-hidden rounded-2xl border border-border bg-surface">
+				{ranked.length === 0 ? (
+					<p className="px-6 py-12 text-center text-foreground-muted">
+						No members yet.
+					</p>
+				) : (
+					<ol>
+						{ranked.map((player, i) => {
+							const isCurrentUser = player.id === session.user.id;
+							return (
+								<li
+									key={player.id}
+									className={`flex items-center gap-4 border-b border-border px-5 py-4 last:border-b-0 transition-colors ${isCurrentUser ? "bg-accent/10" : "hover:bg-surface-2"}`}
+								>
+									<span className="w-8 text-center text-lg">
+										{medals[i] ?? (
+											<span className="text-sm text-foreground-muted">
+												{i + 1}
+											</span>
+										)}
+									</span>
+
+									{player.image ? (
+										<Image
+											src={player.image}
+											alt={player.name}
+											width={36}
+											height={36}
+											className="rounded-full"
+										/>
+									) : (
+										<div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
+											{player.name[0]?.toUpperCase()}
+										</div>
+									)}
+
+									<div className="flex-1">
+										<div className="flex items-center gap-2 font-semibold">
+											{player.name}
+											{isCurrentUser && (
+												<span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs text-accent">
+													you
+												</span>
+											)}
+										</div>
+										<div className="text-xs text-foreground-muted">
+											{player.predictionsScored} result
+											{player.predictionsScored !== 1 ? "s" : ""} scored
+										</div>
+									</div>
+
+									<div
+										className={`text-xl font-bold tabular-nums ${i === 0 ? "text-gold" : i < 3 ? "text-accent" : "text-foreground"}`}
+									>
+										{player.totalPoints}
+										<span className="ml-1 text-sm font-normal text-foreground-muted">
+											pts
+										</span>
+									</div>
+								</li>
+							);
+						})}
+					</ol>
+				)}
+			</div>
+
+			<p className="text-center text-xs text-foreground-muted">
+				Points: 3 exact score · 2 goal difference · 1 correct winner
+			</p>
+		</div>
+	);
+}
