@@ -3,7 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/CopyButton";
-import { LeaderboardChart } from "@/components/LeaderboardChart";
+import { LeaderboardChart, PointsBarChart } from "@/components/LeaderboardChart";
+import type { BarEntry } from "@/components/LeaderboardChart";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -56,6 +57,12 @@ export default async function LeaguePage({
 				b.totalPoints - a.totalPoints ||
 				b.predictionsScored - a.predictionsScored,
 		);
+
+	// Bar chart: current totals per player (sorted by rank already)
+	const barData: BarEntry[] = ranked.map((u) => ({
+		name: u.name,
+		points: u.totalPoints,
+	}));
 
 	// Build chart data: cumulative points over time, scoped to league members
 	const memberIds = league.members.map((m) => m.userId);
@@ -125,6 +132,8 @@ export default async function LeaguePage({
 				</span>
 				<CopyButton text={joinUrl} />
 			</div>
+
+			<PointsBarChart data={barData} />
 
 			<LeaderboardChart data={chartData} players={playerNames} />
 
