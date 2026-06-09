@@ -10,10 +10,11 @@ const LINKS = [
 	{ href: "/my-predictions", label: "My Predictions" },
 ];
 
-export function NavLinks() {
+export function NavLinks({ className }: Readonly<{ className?: string }>) {
 	const pathname = usePathname();
+	const navClass = className ? `flex items-center gap-1 text-sm ${className}` : "flex items-center gap-1 text-sm";
 	return (
-		<nav className="flex items-center gap-1 text-sm">
+		<nav className={navClass}>
 			{LINKS.map(({ href, label }) => {
 				const isActive =
 					pathname === href || pathname.startsWith(`${href}/`);
