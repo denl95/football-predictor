@@ -38,7 +38,8 @@ export default async function JoinLeaguePage({
 
 	async function handleJoin() {
 		"use server";
-		await joinLeague(slug);
+		const result = await joinLeague(slug);
+		if (!result.success) redirect("/leagues");
 		redirect(`/leagues/${slug}`);
 	}
 

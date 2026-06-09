@@ -13,6 +13,7 @@ export default async function LeaguePage({
 	const { slug } = await params;
 	const session = await auth();
 	if (!session?.user?.id) return null;
+	const userId = session.user.id;
 
 	const league = await prisma.league.findUnique({
 		where: { slug },
@@ -87,7 +88,7 @@ export default async function LeaguePage({
 				) : (
 					<ol>
 						{ranked.map((player, i) => {
-							const isCurrentUser = player.id === session.user.id;
+							const isCurrentUser = player.id === userId;
 							return (
 								<li
 									key={player.id}
