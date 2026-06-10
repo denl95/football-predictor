@@ -1,10 +1,10 @@
 export const STAGE_POINTS: Record<string, number> = {
 	ROUND_OF_32: 1,
 	ROUND_OF_16: 2,
-	QUARTER_FINAL: 4,
-	SEMI_FINAL: 8,
-	FINAL: 20,
-	CHAMPION: 30,
+	QUARTER_FINAL: 3,
+	SEMI_FINAL: 5,
+	FINAL: 8,
+	CHAMPION: 12,
 };
 
 export const STAGE_LABEL: Record<string, string> = {

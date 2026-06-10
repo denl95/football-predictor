@@ -61,7 +61,7 @@ export async function finaliseBracketMatch(
 	await Promise.all(
 		pickList.map((p) => {
 			let earned = p.predictedWinner === winner ? pts : 0;
-			// Final: both finalists earn 20pts; champion picker earns an extra 30pts.
+			// Final: both finalists earn FINAL pts; champion picker earns an extra CHAMPION pts.
 			if (match.stage === "FINAL") {
 				earned =
 					(STAGE_POINTS.FINAL ?? 0) +
