@@ -26,6 +26,10 @@ function getStatusBadge(status: Match["status"]) {
 function MatchCard({ match }: { match: MatchWithPrediction }) {
 	const pred = match.prediction;
 	const isFinished = match.status === "FINISHED";
+	const showScore =
+		(isFinished || match.status === "LIVE") &&
+		match.homeScore !== null &&
+		match.awayScore !== null;
 
 	return (
 		<Link
@@ -54,8 +58,10 @@ function MatchCard({ match }: { match: MatchWithPrediction }) {
 				</div>
 
 				<div className="flex flex-col items-center gap-1">
-					{isFinished ? (
-						<div className="rounded-lg bg-surface-2 px-4 py-1 text-xl font-bold tabular-nums">
+					{showScore ? (
+						<div
+							className={`rounded-lg px-4 py-1 text-xl font-bold tabular-nums ${match.status === "LIVE" ? "bg-red-500/20 text-red-400" : "bg-surface-2"}`}
+						>
 							{match.homeScore} – {match.awayScore}
 						</div>
 					) : (

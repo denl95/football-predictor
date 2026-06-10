@@ -27,6 +27,10 @@ export default async function MatchPage({
 	const isFinished = match.status === "FINISHED";
 	const hasStarted = hasMatchStarted(match);
 	const canPredict = !hasStarted;
+	const showScore =
+		(isFinished || match.status === "LIVE") &&
+		match.homeScore !== null &&
+		match.awayScore !== null;
 
 	// Once a match has kicked off, predictions are locked, so it's safe to reveal
 	// everyone's picks (limited to leagues the viewer shares). Points only exist
@@ -84,8 +88,10 @@ export default async function MatchPage({
 					</Link>
 
 					<div className="flex flex-col items-center gap-1">
-						{isFinished ? (
-							<div className="rounded-xl bg-surface-2 px-6 py-2 text-3xl font-bold tabular-nums">
+						{showScore ? (
+							<div
+								className={`rounded-xl px-6 py-2 text-3xl font-bold tabular-nums ${match.status === "LIVE" ? "bg-red-500/20 text-red-400" : "bg-surface-2"}`}
+							>
 								{match.homeScore} – {match.awayScore}
 							</div>
 						) : (
