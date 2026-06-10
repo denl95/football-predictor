@@ -61,6 +61,64 @@ export async function createLeagueAction(
 	redirect(`/leagues/${league.slug}`);
 }
 
+export type LeagueActionResult =
+	| { success: true }
+	| { success: false; error: string };
+
+/** Creator-only: rename a league (slug stays stable to keep join links valid). */
+export async function renameLeague(
+	slug: string,
+	name: string,
+): Promise<LeagueActionResult> {
+	const session = await auth();
+	if (!session?.user?.id) return { success: false, error: "Unauthorised" };
+
+	const trimmed = name.trim();
+	if (!trimmed || trimmed.length > 50)
+		return { success: false, error: "Name must be 1–50 characters" };
+
+	const league = await prisma.league.findUnique({ where: { slug } });
+	if (!league) return { success: false, error: "League not found" };
+	if (league.createdBy !== session.user.id)
+		return { success: false, error: "Only the league creator can rename it" };
+
+	await prisma.league.update({
+		where: { id: league.id },
+		data: { name: trimmed },
+	});
+
+	revalidatePath(`/leagues/${slug}`);
+	revalidatePath("/leagues");
+	return { success: true };
+}
+
+/** Creator-only: remove a member from a league. */
+export async function removeMember(
+	slug: string,
+	userId: string,
+): Promise<LeagueActionResult> {
+	const session = await auth();
+	if (!session?.user?.id) return { success: false, error: "Unauthorised" };
+
+	const league = await prisma.league.findUnique({ where: { slug } });
+	if (!league) return { success: false, error: "League not found" };
+	if (league.createdBy !== session.user.id)
+		return {
+			success: false,
+			error: "Only the league creator can remove members",
+		};
+	if (userId === league.createdBy)
+		return { success: false, error: "The creator can't be removed" };
+
+	await prisma.leagueMember.delete({
+		where: { leagueId_userId: { leagueId: league.id, userId } },
+	});
+
+	revalidatePath(`/leagues/${slug}`);
+	revalidatePath("/leagues");
+	return { success: true };
+}
+
 export async function joinLeague(
 	slug: string,
 ): Promise<{ success: true } | { success: false; error: string }> {

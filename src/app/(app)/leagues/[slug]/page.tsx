@@ -8,6 +8,8 @@ import {
 	LeaderboardChart,
 	PointsBarChart,
 } from "@/components/LeaderboardChart";
+import { RemoveMemberButton } from "@/components/RemoveMemberButton";
+import { RenameLeagueForm } from "@/components/RenameLeagueForm";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -118,14 +120,20 @@ export default async function LeaguePage({
 	const joinUrl = `${proto}://${host}/leagues/join/${slug}`;
 
 	const medals = ["🥇", "🥈", "🥉"];
+	const isCreator = league.createdBy === userId;
 
 	return (
 		<div className="mx-auto flex max-w-2xl flex-col gap-6">
-			<div className="flex flex-col gap-1">
-				<h1 className="text-2xl font-bold">{league.name}</h1>
-				<p className="text-sm text-foreground-muted">
-					{ranked.length} member{ranked.length !== 1 ? "s" : ""}
-				</p>
+			<div className="flex items-start justify-between gap-3">
+				<div className="flex flex-col gap-1">
+					<h1 className="text-2xl font-bold">{league.name}</h1>
+					<p className="text-sm text-foreground-muted">
+						{ranked.length} member{ranked.length !== 1 ? "s" : ""}
+					</p>
+				</div>
+				{isCreator ? (
+					<RenameLeagueForm slug={slug} currentName={league.name} />
+				) : null}
 			</div>
 
 			{/* Join link */}
@@ -150,10 +158,11 @@ export default async function LeaguePage({
 					<ol>
 						{ranked.map((player, i) => {
 							const isCurrentUser = player.id === userId;
+							const canRemove = isCreator && player.id !== league.createdBy;
 							return (
 								<li
 									key={player.id}
-									className={`border-b border-border last:border-b-0 transition-colors ${isCurrentUser ? "bg-accent/10" : "hover:bg-surface-2"}`}
+									className={`flex items-center border-b border-border last:border-b-0 transition-colors ${isCurrentUser ? "bg-accent/10" : "hover:bg-surface-2"}`}
 								>
 									<Link
 										href={
@@ -161,7 +170,7 @@ export default async function LeaguePage({
 												? "/my-predictions"
 												: `/players/${player.id}`
 										}
-										className="flex items-center gap-4 px-5 py-4"
+										className="flex flex-1 items-center gap-4 px-5 py-4"
 									>
 										<span className="w-8 text-center text-lg">
 											{medals[i] ?? (
@@ -209,6 +218,13 @@ export default async function LeaguePage({
 											</span>
 										</div>
 									</Link>
+									{canRemove ? (
+										<RemoveMemberButton
+											slug={slug}
+											userId={player.id}
+											userName={player.name}
+										/>
+									) : null}
 								</li>
 							);
 						})}
