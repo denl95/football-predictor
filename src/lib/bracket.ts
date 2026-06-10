@@ -32,9 +32,11 @@ export const GROUPS: Record<string, string[]> = {
 	L: ["England", "Croatia", "Ghana", "Panama"],
 };
 
-/** "Group A Winner" | "Group C Runner-up" → all 4 teams in that group as candidates */
+/** "Group A Winner" | "Group C Runner-up" → 4 teams from that group.
+ *  "Best 3rd Place" → all teams across all groups. */
 export function teamsForLabel(label: string | null | undefined): string[] {
 	if (!label) return [];
+	if (label === "Best 3rd Place") return Object.values(GROUPS).flat();
 	const m = /^Group ([A-L]) (?:Winner|Runner-up)$/.exec(label);
 	if (m) return GROUPS[m[1]] ?? [];
 	return [];

@@ -336,8 +336,8 @@ function BracketCard({
 		});
 	}
 
-	// R32: label rows + inline winner selection (only when group letters exist)
-	if (homeGroup !== null || awayGroup !== null) {
+	// R32: label rows + inline winner selection (all R32 matches have labels in DB)
+	if (match.homeLabel !== null || match.awayLabel !== null) {
 		const labelRow = (label: string, side: "home" | "away") => {
 			const filled = !isLabel(label);
 			const isWinner = winner === label;
