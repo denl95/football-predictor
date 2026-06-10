@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Flag } from "@/components/Flag";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { hasMatchStarted } from "@/lib/match-lock";
 
 export default async function PlayerPage({
 	params,
@@ -152,6 +153,7 @@ export default async function PlayerPage({
 					<ul>
 						{rows.map(({ match, myPred, theirPred }) => {
 							const isFinished = match.status === "FINISHED";
+							const hasStarted = hasMatchStarted(match);
 							return (
 								<li
 									key={match.id}
@@ -192,7 +194,7 @@ export default async function PlayerPage({
 										{theirPred ? (
 											<>
 												<span className="tabular-nums font-semibold text-sm">
-													{isFinished
+													{hasStarted
 														? `${theirPred.homeScore} – ${theirPred.awayScore}`
 														: "?"}
 												</span>

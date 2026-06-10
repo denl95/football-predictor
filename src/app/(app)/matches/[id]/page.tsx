@@ -5,6 +5,7 @@ import { Flag } from "@/components/Flag";
 import { PredictionForm } from "@/components/PredictionForm";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { hasMatchStarted } from "@/lib/match-lock";
 
 export default async function MatchPage({
 	params,
@@ -23,12 +24,18 @@ export default async function MatchPage({
 			})
 		: null;
 
+	const isFinished = match.status === "FINISHED";
+	const hasStarted = hasMatchStarted(match);
+	const canPredict = !hasStarted;
+
+	// Once a match has kicked off, predictions are locked, so it's safe to reveal
+	// everyone's picks (limited to leagues the viewer shares). Points only exist
+	// after the match is finalised.
 	const allPredictions =
-		match.status === "FINISHED" && session?.user?.id
+		hasStarted && session?.user?.id
 			? await prisma.prediction.findMany({
 					where: {
 						matchId: id,
-						points: { not: null },
 						user: {
 							leagueMemberships: {
 								some: {
@@ -42,12 +49,12 @@ export default async function MatchPage({
 					include: {
 						user: { select: { id: true, name: true, image: true } },
 					},
-					orderBy: { points: "desc" },
+					orderBy: [
+						{ points: { sort: "desc", nulls: "last" } },
+						{ createdAt: "asc" },
+					],
 				})
 			: [];
-
-	const isFinished = match.status === "FINISHED";
-	const canPredict = match.status === "UPCOMING";
 
 	return (
 		<div className="mx-auto flex max-w-xl flex-col gap-6">
@@ -176,11 +183,13 @@ export default async function MatchPage({
 									<span className="tabular-nums text-sm text-foreground-muted">
 										{p.homeScore} – {p.awayScore}
 									</span>
-									<span
-										className={`w-12 rounded-lg px-2 py-0.5 text-center text-sm font-bold ${p.points === 3 ? "bg-gold/20 text-gold" : (p.points ?? 0) >= 1 ? "bg-accent/20 text-accent" : "bg-red-500/20 text-red-400"}`}
-									>
-										{p.points} pts
-									</span>
+									{p.points !== null ? (
+										<span
+											className={`w-12 rounded-lg px-2 py-0.5 text-center text-sm font-bold ${p.points === 3 ? "bg-gold/20 text-gold" : p.points >= 1 ? "bg-accent/20 text-accent" : "bg-red-500/20 text-red-400"}`}
+										>
+											{p.points} pts
+										</span>
+									) : null}
 								</li>
 							);
 						})}

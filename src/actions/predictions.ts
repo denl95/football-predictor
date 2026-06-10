@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { hasMatchStarted } from "@/lib/match-lock";
 import { calculatePoints } from "@/lib/points";
 
 const PredictionSchema = z.object({
@@ -37,7 +38,7 @@ export async function upsertPrediction(
 
 	const match = await prisma.match.findUnique({ where: { id: matchId } });
 	if (!match) return { success: false, error: "Match not found" };
-	if (match.status !== "UPCOMING") {
+	if (hasMatchStarted(match)) {
 		return { success: false, error: "Cannot predict a match that has started" };
 	}
 
