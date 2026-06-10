@@ -334,13 +334,13 @@ function BracketCard({
 	onPick: (matchId: string, team: string) => void;
 	onOpenPicker: (state: PickerState) => void;
 }>) {
-	function openPicker() {
+	function openPicker(singleGroup?: "home" | "away") {
 		onOpenPicker({
 			matchId: match.id,
 			homeDisplay,
 			awayDisplay,
-			homeGroup,
-			awayGroup,
+			homeGroup: singleGroup === "away" ? null : homeGroup,
+			awayGroup: singleGroup === "home" ? null : awayGroup,
 			suggested,
 		});
 	}
@@ -352,7 +352,7 @@ function BracketCard({
 			pickFooter = (
 				<button
 					type="button"
-					onClick={openPicker}
+					onClick={() => openPicker()}
 					className="flex w-full items-center gap-1.5 px-2 py-1.5 text-xs transition-colors hover:bg-surface-2"
 				>
 					{winner ? (
@@ -379,13 +379,13 @@ function BracketCard({
 			);
 		}
 
-		const labelRow = (label: string) =>
+		const labelRow = (label: string, side: "home" | "away") =>
 			isLocked ? (
 				<div className="px-2 py-1.5 text-xs text-foreground-muted">{label}</div>
 			) : (
 				<button
 					type="button"
-					onClick={openPicker}
+					onClick={() => openPicker(side)}
 					className="flex w-full items-start px-2 py-1.5 text-left text-xs text-foreground-muted transition-colors hover:bg-surface-2"
 				>
 					{label}
@@ -397,9 +397,9 @@ function BracketCard({
 				className="overflow-hidden rounded-lg border border-border bg-surface"
 				style={{ width: CARD_W }}
 			>
-				{labelRow(homeDisplay)}
+				{labelRow(homeDisplay, "home")}
 				<div className="h-px bg-border/30" />
-				{labelRow(awayDisplay)}
+				{labelRow(awayDisplay, "away")}
 				{pickFooter ? (
 					<>
 						<div className="h-px bg-border/50" />
