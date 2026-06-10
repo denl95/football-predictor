@@ -338,7 +338,7 @@ function BracketCard({
 }>) {
 	function openPicker(singleGroup?: "home" | "away") {
 		onOpenPicker({
-			matchId: match.id,
+			matchId: singleGroup ? `${match.id}:${singleGroup}` : match.id,
 			homeDisplay,
 			awayDisplay,
 			homeGroup: singleGroup === "away" ? null : homeGroup,
@@ -381,18 +381,32 @@ function BracketCard({
 			);
 		}
 
-		const labelRow = (label: string, side: "home" | "away") =>
-			isLocked ? (
-				<div className="px-2 py-1.5 text-xs text-foreground-muted">{label}</div>
-			) : (
+		const labelRow = (label: string, side: "home" | "away") => {
+			const filled = !isLabel(label);
+			if (isLocked) {
+				return (
+					<div className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-foreground-muted">
+						{filled ? <Flag name={label} /> : null}
+						<span className="flex-1 truncate">{label}</span>
+					</div>
+				);
+			}
+			return (
 				<button
 					type="button"
 					onClick={() => openPicker(side)}
-					className="flex w-full items-start px-2 py-1.5 text-left text-xs text-foreground-muted transition-colors hover:bg-surface-2"
+					className={`flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors hover:bg-surface-2 ${filled ? "text-foreground" : "text-foreground-muted"}`}
 				>
-					{label}
+					{filled ? <Flag name={label} /> : null}
+					<span className="flex-1 truncate">{label}</span>
+					{filled ? (
+						<span className="shrink-0 text-[10px] text-foreground-muted">
+							Change
+						</span>
+					) : null}
 				</button>
 			);
+		};
 
 		return (
 			<div
@@ -565,23 +579,46 @@ export function BracketTree({
 	isLocked: boolean;
 }>) {
 	const [picks, setPicks] = useState<Record<string, string>>(initialPicks);
+	const [slotPicks, setSlotPicks] = useState<
+		Record<string, { home?: string; away?: string }>
+	>({});
 	const [dirty, setDirty] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [picker, setPicker] = useState<PickerState | null>(null);
 	const [pending, startTransition] = useTransition();
 
-	function handlePick(matchId: string, team: string) {
-		setPicks((prev) => ({ ...prev, [matchId]: team }));
-		setDirty(true);
+	function handlePick(key: string, team: string) {
+		if (key.endsWith(":home") || key.endsWith(":away")) {
+			const [matchId, side] = key.split(":");
+			setSlotPicks((prev) => ({
+				...prev,
+				[matchId]: { ...prev[matchId], [side]: team },
+			}));
+		} else {
+			setPicks((prev) => ({ ...prev, [key]: team }));
+			setDirty(true);
+		}
 	}
 
-	function handleClearPick(matchId: string) {
-		setPicks((prev) => {
-			const next = { ...prev };
-			delete next[matchId];
-			return next;
-		});
-		setDirty(true);
+	function handleClearPick(key: string) {
+		if (key.endsWith(":home") || key.endsWith(":away")) {
+			const [matchId, side] = key.split(":");
+			setSlotPicks((prev) => {
+				const next = { ...prev };
+				if (next[matchId]) {
+					next[matchId] = { ...next[matchId] };
+					delete next[matchId][side as "home" | "away"];
+				}
+				return next;
+			});
+		} else {
+			setPicks((prev) => {
+				const next = { ...prev };
+				delete next[key];
+				return next;
+			});
+			setDirty(true);
+		}
 	}
 
 	function handleSave() {
@@ -598,15 +635,21 @@ export function BracketTree({
 
 	function r32Card(i: number): CardInfo {
 		const m = r32[i];
-		const home = effectiveTeam(m.homeTeam, m.homeLabel);
-		const away = effectiveTeam(m.awayTeam, m.awayLabel);
+		const slots = slotPicks[m.id];
+		const home = slots?.home ?? effectiveTeam(m.homeTeam, m.homeLabel);
+		const away = slots?.away ?? effectiveTeam(m.awayTeam, m.awayLabel);
 		return {
 			match: m,
 			homeDisplay: home,
 			awayDisplay: away,
 			homeGroup: parseGroupLetter(m.homeLabel),
 			awayGroup: parseGroupLetter(m.awayLabel),
-			suggested: [...teamsForLabel(m.homeLabel), ...teamsForLabel(m.awayLabel)],
+			suggested: [
+				...new Set([
+					...(slots?.home ? [slots.home] : teamsForLabel(m.homeLabel)),
+					...(slots?.away ? [slots.away] : teamsForLabel(m.awayLabel)),
+				]),
+			],
 		};
 	}
 
@@ -764,7 +807,15 @@ export function BracketTree({
 			{picker ? (
 				<PickerModal
 					state={picker}
-					currentPick={picks[picker.matchId] ?? null}
+					currentPick={(() => {
+						if (picker.matchId.endsWith(":home")) {
+							return slotPicks[picker.matchId.slice(0, -5)]?.home ?? null;
+						}
+						if (picker.matchId.endsWith(":away")) {
+							return slotPicks[picker.matchId.slice(0, -5)]?.away ?? null;
+						}
+						return picks[picker.matchId] ?? null;
+					})()}
 					allTeams={allTeams}
 					onPick={handlePick}
 					onClear={handleClearPick}
