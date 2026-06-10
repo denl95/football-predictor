@@ -43,10 +43,12 @@ type TeamSection = {
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
-const UNIT = 88;
-const TOTAL = 8 * UNIT;
-const CARD_W = 152;
-const CONN_W = 14;
+// Dimensions are driven by CSS custom properties so the whole bracket scales up on
+// larger screens. The variables themselves are set (with responsive breakpoints) on
+// the root container below; these strings just reference them in inline styles.
+const TOTAL = "calc(8 * var(--bk-unit))";
+const CARD_W = "var(--bk-card)";
+const CONN_W = "var(--bk-conn)";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -201,6 +203,7 @@ function PickerModal({
 	state,
 	currentPick,
 	allTeams,
+	usedTeams,
 	onPick,
 	onClear,
 	onClose,
@@ -208,12 +211,25 @@ function PickerModal({
 	state: PickerState;
 	currentPick: string | null;
 	allTeams: string[];
+	usedTeams: Set<string>;
 	onPick: (matchId: string, team: string) => void;
 	onClear: (matchId: string) => void;
 	onClose: () => void;
 }>) {
 	const [search, setSearch] = useState("");
-	const sections = buildSections(state, allTeams, search);
+	// A team already chosen for another slot can't fill this one too — hide it,
+	// but keep this slot's own current pick visible so it still shows as selected.
+	const excluded = useMemo(() => {
+		const set = new Set(usedTeams);
+		if (currentPick) set.delete(currentPick);
+		return set;
+	}, [usedTeams, currentPick]);
+	const sections = buildSections(state, allTeams, search)
+		.map((section) => ({
+			...section,
+			teams: section.teams.filter((t) => !excluded.has(t)),
+		}))
+		.filter((section) => section.teams.length > 0 || search.length > 0);
 
 	function handleSelect(matchId: string, team: string) {
 		onPick(matchId, team);
@@ -345,7 +361,7 @@ function BracketCard({
 			if (isLocked) {
 				return (
 					<div
-						className={`flex items-center gap-1.5 px-2 py-1.5 text-xs ${isWinner ? "bg-accent/20 font-semibold text-accent" : "text-foreground-muted"}`}
+						className={`flex items-center gap-1.5 px-2 py-1.5 text-xs lg:text-sm ${isWinner ? "bg-accent/20 font-semibold text-accent" : "text-foreground-muted"}`}
 					>
 						{filled ? <Flag name={label} /> : null}
 						<span className="flex-1 truncate">{label}</span>
@@ -359,7 +375,7 @@ function BracketCard({
 					<button
 						type="button"
 						onClick={() => openPicker(side)}
-						className="flex w-full items-start px-2 py-1.5 text-left text-xs text-foreground-muted transition-colors hover:bg-surface-2"
+						className="flex w-full items-start px-2 py-1.5 text-left text-xs text-foreground-muted transition-colors hover:bg-surface-2 lg:text-sm"
 					>
 						{label}
 					</button>
@@ -368,7 +384,7 @@ function BracketCard({
 
 			return (
 				<div
-					className={`flex items-center gap-1.5 px-2 py-1.5 text-xs transition-colors ${isWinner ? "bg-accent/20" : "hover:bg-surface-2"}`}
+					className={`flex items-center gap-1.5 px-2 py-1.5 text-xs transition-colors lg:text-sm ${isWinner ? "bg-accent/20" : "hover:bg-surface-2"}`}
 				>
 					<button
 						type="button"
@@ -413,7 +429,7 @@ function BracketCard({
 			type="button"
 			disabled={tbd || isLocked}
 			onClick={() => onPick(match.id, display)}
-			className={`flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors disabled:cursor-default
+			className={`flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors disabled:cursor-default lg:text-sm
 				${selected ? "bg-accent/20 font-semibold text-accent" : tbd ? "text-foreground-muted opacity-40" : isLocked ? "text-foreground-muted" : "text-foreground hover:bg-surface-2"}`}
 		>
 			{!tbd ? <Flag name={display} /> : null}
@@ -699,9 +715,22 @@ export function BracketTree({
 		? [higherCard([finalMatch], sf, 0)]
 		: [];
 
+	// Every real team chosen for an R32 slot — a team occupies exactly one slot in
+	// the bracket, so it must disappear from every other slot's picker.
+	const usedTeams = useMemo(() => {
+		const set = new Set<string>();
+		for (const slots of Object.values(slotPicks)) {
+			if (slots.home) set.add(slots.home);
+			if (slots.away) set.add(slots.away);
+		}
+		return set;
+	}, [slotPicks]);
+
 	return (
-		<div className="flex flex-col gap-4">
-			<div className="overflow-x-auto pb-4">
+		<div className="flex flex-col gap-4 [--bk-card:152px] [--bk-conn:14px] [--bk-unit:84px] md:[--bk-card:168px] md:[--bk-conn:16px] md:[--bk-unit:96px] lg:[--bk-card:190px] lg:[--bk-conn:18px] lg:[--bk-unit:110px] xl:[--bk-card:212px] xl:[--bk-conn:20px] xl:[--bk-unit:124px] 2xl:[--bk-card:236px] 2xl:[--bk-conn:24px] 2xl:[--bk-unit:140px]">
+			{/* Break out of the centred max-w-6xl container on wide screens so the
+			    larger bracket has room to breathe before it needs to scroll. */}
+			<div className="overflow-x-auto pb-4 xl:ml-[calc(50%-50vw)] xl:mr-[calc(50%-50vw)] xl:w-screen xl:px-8">
 				<div className="flex items-start" style={{ minWidth: "max-content" }}>
 					<BracketColumn
 						cards={leftR32}
@@ -828,6 +857,7 @@ export function BracketTree({
 						return picks[picker.matchId] ?? null;
 					})()}
 					allTeams={allTeams}
+					usedTeams={usedTeams}
 					onPick={handlePick}
 					onClear={handleClearPick}
 					onClose={() => setPicker(null)}
