@@ -243,7 +243,7 @@ function PickerModal({
 			<dialog
 				open
 				aria-modal="true"
-				className="relative z-10 m-0 flex w-full max-w-xs flex-col gap-3 rounded-2xl border border-border bg-surface p-4"
+				className="relative z-10 m-0 flex w-full max-w-xs flex-col gap-3 rounded-2xl border border-border bg-surface p-4 text-foreground"
 				onKeyDown={(e) => {
 					if (e.key === "Escape") onClose();
 					e.stopPropagation();
@@ -379,18 +379,27 @@ function BracketCard({
 			);
 		}
 
+		const labelRow = (label: string) =>
+			isLocked ? (
+				<div className="px-2 py-1.5 text-xs text-foreground-muted">{label}</div>
+			) : (
+				<button
+					type="button"
+					onClick={openPicker}
+					className="flex w-full items-start px-2 py-1.5 text-left text-xs text-foreground-muted transition-colors hover:bg-surface-2"
+				>
+					{label}
+				</button>
+			);
+
 		return (
 			<div
 				className="overflow-hidden rounded-lg border border-border bg-surface"
 				style={{ width: CARD_W }}
 			>
-				<div className="px-2 py-1.5 text-xs text-foreground-muted">
-					{homeDisplay}
-				</div>
+				{labelRow(homeDisplay)}
 				<div className="h-px bg-border/30" />
-				<div className="px-2 py-1.5 text-xs text-foreground-muted">
-					{awayDisplay}
-				</div>
+				{labelRow(awayDisplay)}
 				{pickFooter ? (
 					<>
 						<div className="h-px bg-border/50" />
