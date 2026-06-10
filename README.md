@@ -1,12 +1,22 @@
 # Football Predictor
 
-A Next.js app for predicting football match scores, with a leaderboard and per-user prediction history.
+A Next.js app for predicting World Cup 2026 results.
+
+## Features
+
+- **Match predictions** — predict scores for every fixture; points awarded once results are in
+- **Knockout bracket** — pick who advances through each round, from the Round of 32 to the Champion
+- **Private leagues** — create a league, share a join link, and compare on a leaderboard; creators can rename their league and remove members
+- **Head-to-head** — compare your predictions against any other player
+- **Admin** — a designated admin (`ADMIN_EMAIL`) can finalise results and delete users
+- **Daily score sync** from [football-data.org](https://www.football-data.org/) via Vercel Cron
 
 ## Prerequisites
 
 - [Bun](https://bun.sh)
 - PostgreSQL (see below)
-- A Google OAuth app ([console.developers.google.com](https://console.developers.google.com/))
+- A Google OAuth app ([console.developers.google.com](https://console.developers.google.com/)) — optional; email/password sign-up also works
+- A [football-data.org](https://www.football-data.org/client/register) API key (free tier) for score syncing
 
 ## Database
 
@@ -44,7 +54,9 @@ cp .env.example .env
 | `AUTH_SECRET` | Random secret — generate with `openssl rand -base64 32` |
 | `AUTH_GOOGLE_ID` | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
-| `ADMIN_EMAIL` | Email address allowed to finalise match scores |
+| `ADMIN_EMAIL` | Email address with admin rights (finalise scores, delete users) |
+| `FOOTBALL_DATA_API_KEY` | football-data.org API key (for score syncing) |
+| `CRON_SECRET` | Bearer token guarding the `/api/cron/sync` endpoint |
 
 3. Run database migrations:
 
@@ -142,9 +154,21 @@ Or use the **Cron Jobs** tab in the Vercel dashboard to run it on demand.
 
 ## Points System
 
+### Match predictions
+
 | Result | Points |
 |--------|--------|
 | Exact score | 3 |
 | Correct goal difference | 2 |
 | Correct winner or draw | 1 |
 | Wrong | 0 |
+
+### Bracket predictions
+
+Points are awarded per knockout round a correctly-picked team reaches:
+
+| Round | R32 | R16 | QF | SF | Finalist | Champion |
+|-------|----:|----:|---:|---:|---------:|---------:|
+| Points | 1 | 2 | 3 | 5 | 8 | +12 |
+
+Picking either finalist correctly earns the **Finalist** points; correctly picking the eventual winner earns the **Champion** points on top.

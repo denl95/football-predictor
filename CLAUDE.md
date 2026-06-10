@@ -2,7 +2,8 @@
 
 # Football Predictor
 
-A Next.js app for predicting football match scores, with a leaderboard and per-user prediction history.
+A Next.js app for predicting World Cup 2026 results: match-score predictions, a
+knockout-bracket predictor, private leagues with leaderboards, and per-user history.
 
 ## Tech Stack
 
@@ -41,30 +42,56 @@ src/
       matches/
         page.tsx         # Match list grouped by stage/group
         [id]/page.tsx    # Single match detail + prediction form
+      groups/page.tsx    # Group-stage standings tables
+      bracket/page.tsx   # Knockout bracket predictions (<BracketTree>)
+      leagues/
+        page.tsx         # The user's leagues
+        new/page.tsx     # Create a league
+        [slug]/page.tsx  # League leaderboard + creator controls (rename/remove)
+        join/[slug]/page.tsx  # Join via shared link
+      players/[id]/page.tsx   # Head-to-head: your predictions vs another player
+      teams/[name]/page.tsx   # All matches for one team
       my-predictions/page.tsx
-      leaderboard/page.tsx
-    login/page.tsx       # Public login page (Google OAuth)
+      admin/page.tsx     # Admin only (ADMIN_EMAIL) — list + delete users
+    login/page.tsx       # Public login — Google OAuth + email/password
     api/auth/[...nextauth]/route.ts
+    api/cron/sync/route.ts   # Daily score sync (Vercel Cron, CRON_SECRET-guarded)
     layout.tsx           # Root layout (fonts, globals.css)
     page.tsx             # Root — redirects authenticated users to /matches
   actions/
-    predictions.ts       # Server actions: upsertPrediction, finaliseMatch
+    predictions.ts       # upsertPrediction, finaliseMatch
+    bracket.ts           # saveBracketPicks, finaliseBracketMatch
+    leagues.ts           # createLeagueAction, joinLeague, renameLeague, removeMember
+    admin.ts             # deleteUser (ADMIN_EMAIL only)
+    auth.ts              # registerUser (email/password signup, bcrypt)
   lib/
-    auth.ts              # NextAuth config (Google provider, Prisma adapter)
+    auth.ts              # NextAuth config (Google + Credentials, JWT strategy)
     db.ts                # Prisma client singleton (PrismaPg driver adapter)
-    points.ts            # calculatePoints() — scoring logic
-  components/
-    Navbar.tsx
-    PredictionForm.tsx
+    points.ts            # calculatePoints() — match scoring
+    bracket.ts           # STAGE_POINTS, GROUPS, teamsForLabel() — bracket scoring/labels
+    football-data.ts     # football-data.org API client (used by cron sync)
+  components/            # Navbar, NavLinks, BracketTree, LeaderboardChart,
+                         # PredictionForm, Flag, CopyButton, DeleteUserButton,
+                         # RenameLeagueForm, RemoveMemberButton, NavigationProgress
   generated/prisma/      # Auto-generated — never edit manually
-  middleware.ts          # Auth guard for all routes except login/root/api/auth
 ```
+
+There is **no `middleware.ts`**. Route protection is handled by the `authorized`
+callback in `src/lib/auth.ts` (returns `!!auth?.user`) combined with the `(app)`
+route group; `/login`, `/` and `api/auth/**` are reachable when signed out.
 
 ## Database
 
 Models in `prisma/schema.prisma`:
 - **Auth.js required**: `User`, `Account`, `Session`, `VerificationToken`
-- **App**: `Match` (with `MatchStatus` and `MatchStage` enums), `Prediction`
+- **App**: `Match` (with `MatchStatus` and `MatchStage` enums), `Prediction`,
+  `League`, `LeagueMember`, `BracketMatchPick`
+
+Cascade note: every user relation has `onDelete: Cascade` **except `League.creator`**.
+Deleting a user therefore requires removing the leagues they created first (see
+`deleteUser` in `src/actions/admin.ts`). `BracketMatchPick.matchId` is a real FK to
+`Match`, so synthetic bracket-slot keys can't be persisted — R32 slot picks are kept
+as ephemeral client state in `<BracketTree>`.
 
 Prisma client is generated to `src/generated/prisma/` — import from there:
 ```ts
@@ -76,29 +103,46 @@ The db singleton in `src/lib/db.ts` uses `PrismaPg` (driver adapter pattern via 
 
 ## Auth
 
-- Google OAuth only via NextAuth v5
-- Middleware protects everything except: `api/auth/**`, `_next/**`, `favicon.ico`, `/login`, `/` (root)
-- Admin actions (e.g. `finaliseMatch`) check `session.user.email === process.env.ADMIN_EMAIL`
-- `session.user.id` is available because the session callback in `src/lib/auth.ts` attaches it
+- Two providers via NextAuth v5: **Google OAuth** and **Credentials** (email/password,
+  hashed with bcrypt; signup via `registerUser` in `src/actions/auth.ts`)
+- **JWT session strategy** — required because Credentials is used alongside the Prisma
+  adapter. The `jwt` callback persists the user id into `token.sub`; the `session`
+  callback copies it back to `session.user.id`
+- Route protection: the `authorized` callback (`!!auth?.user`) + the `(app)` route group
+- Admin actions (`finaliseMatch`, `finaliseBracketMatch`, `deleteUser`) and the `/admin`
+  page check `session.user.email === process.env.ADMIN_EMAIL`
 
 Required environment variables:
 ```
 DATABASE_URL=
+AUTH_SECRET=
 AUTH_GOOGLE_ID=
 AUTH_GOOGLE_SECRET=
-AUTH_SECRET=
 ADMIN_EMAIL=
+FOOTBALL_DATA_API_KEY=    # football-data.org client, used by the cron sync
+CRON_SECRET=              # bearer token guarding /api/cron/sync
 ```
 
 ## Points System
 
-Defined in `src/lib/points.ts`:
+### Match predictions — `src/lib/points.ts`
 - **3 pts** — exact score
 - **2 pts** — correct goal difference (implies correct winner / draw)
 - **1 pt** — correct winner or draw
 - **0 pts** — wrong
 
-Points are calculated and written to `Prediction.points` when `finaliseMatch` is called.
+Calculated and written to `Prediction.points` when `finaliseMatch` is called.
+
+### Bracket predictions — `STAGE_POINTS` in `src/lib/bracket.ts`
+Per knockout round a correctly-picked team survives (light-geometric curve):
+
+| Round | R32 | R16 | QF | SF | Finalist | Champion |
+|-------|----:|----:|---:|---:|---------:|---------:|
+| Pts   | 1   | 2   | 3  | 5  | 8        | +12      |
+
+The `FINAL` match is scored specially in `finaliseBracketMatch`: everyone who picked
+**either** finalist earns `FINAL` (8) pts, and whoever picked the actual winner earns an
+additional `CHAMPION` (12) pts. Written to `BracketMatchPick.points`.
 
 ## Styling Conventions
 
@@ -131,5 +175,8 @@ Use these tokens (`bg-surface`, `text-accent`, `border-border`, etc.) — do not
 All server actions live in `src/actions/`. They use `"use server"` and follow the pattern:
 - Validate session first, return `{ success: false, error: "Unauthorised" }` if missing
 - Parse input with Zod, return `{ success: false, error: "..." }` on failure
+- Re-check admin/creator authorisation server-side — never rely on the UI hiding a control
 - Call `revalidatePath` for affected routes after mutations
-- Use `PredictionState = { success: true } | { success: false; error: string }` as the return type for form actions
+- Return a discriminated union `{ success: true } | { success: false; error: string }`
+  (named per file: `PredictionState`, `BracketActionResult`, `LeagueActionResult`,
+  `AdminActionResult`)
