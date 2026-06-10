@@ -77,9 +77,13 @@ src/
   generated/prisma/      # Auto-generated — never edit manually
 ```
 
-There is **no `middleware.ts`**. Route protection is handled by the `authorized`
-callback in `src/lib/auth.ts` (returns `!!auth?.user`) combined with the `(app)`
-route group; `/login`, `/` and `api/auth/**` are reachable when signed out.
+Route protection lives in **`src/proxy.ts`** (Next.js 16 renamed `middleware.ts` →
+`proxy.ts`). It re-exports `auth as proxy` and its `matcher` runs the `authorized`
+callback (`!!auth?.user`) on every path **except** those in the negative lookahead:
+`api/auth`, `api/cron`, `_next/static`, `_next/image`, `favicon.ico`, `/login`, and
+`/`. Anything not excluded redirects to `/login` when signed out — so new public or
+token-guarded endpoints (e.g. cron/webhooks) must be added to the matcher exclusions,
+otherwise they'll be bounced to the login page.
 
 ## Database
 

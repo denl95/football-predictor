@@ -14,8 +14,11 @@ for the full project overview.
   `@/generated/prisma/client`, never from `@prisma/client`. Always import the shared
   `prisma` instance from `@/lib/db` (it wires up the `PrismaPg` driver adapter).
   `src/generated/` is auto-generated — never edit it by hand.
-- **There is no `middleware.ts`.** Auth gating is the `authorized` callback in
-  `src/lib/auth.ts` plus the `src/app/(app)/` route group.
+- **Route protection is `src/proxy.ts`** (Next 16's renamed `middleware.ts`). Its
+  `matcher` runs the `authorized` callback on everything except the negative-lookahead
+  exclusions (`api/auth`, `api/cron`, `_next/*`, `favicon.ico`, `/login`, `/`). Public
+  or token-guarded endpoints (cron, webhooks) MUST be added to those exclusions or
+  they'll be redirected to `/login`.
 - **Session uses the JWT strategy** (Credentials + adapter). `session.user.id` exists
   only because the `jwt`/`session` callbacks thread `token.sub` through.
 - **Admin/creator checks must be re-done server-side** in the action — hiding a button
