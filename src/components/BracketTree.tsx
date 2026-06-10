@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { saveBracketPicks } from "@/actions/bracket";
 import { Flag } from "@/components/Flag";
 import { GROUPS, teamsForLabel } from "@/lib/bracket";
@@ -264,7 +264,6 @@ function PickerModal({
 							className="mt-0.5 shrink-0 text-xs text-foreground-muted transition-colors hover:text-red-400"
 							onClick={() => {
 								onClear(state.matchId);
-								onClose();
 							}}
 						>
 							Clear
@@ -345,69 +344,62 @@ function BracketCard({
 		});
 	}
 
-	// R32 / TBD: label rows (non-clickable) + explicit pick button
+	// R32 / TBD: label rows + inline winner selection
 	if (
 		isLabel(homeDisplay) ||
 		isLabel(awayDisplay) ||
 		homeGroup !== null ||
 		awayGroup !== null
 	) {
-		let pickFooter: ReactNode = null;
-		if (!isLocked) {
-			pickFooter = (
-				<button
-					type="button"
-					onClick={() => openPicker()}
-					className="flex w-full items-center gap-1.5 px-2 py-1.5 text-xs transition-colors hover:bg-surface-2"
-				>
-					{winner ? (
-						<>
-							<Flag name={winner} />
-							<span className="flex-1 truncate font-semibold text-accent">
-								{winner}
-							</span>
-							<span className="shrink-0 text-[10px] text-foreground-muted">
-								Change
-							</span>
-						</>
-					) : (
-						<span className="text-foreground-muted">Pick winner →</span>
-					)}
-				</button>
-			);
-		} else if (winner) {
-			pickFooter = (
-				<div className="flex items-center gap-1.5 px-2 py-1.5 text-xs">
-					<Flag name={winner} />
-					<span className="truncate font-semibold text-accent">{winner}</span>
-				</div>
-			);
-		}
-
 		const labelRow = (label: string, side: "home" | "away") => {
 			const filled = !isLabel(label);
+			const isWinner = winner === label;
+
 			if (isLocked) {
 				return (
-					<div className="flex items-center gap-1.5 px-2 py-1.5 text-xs text-foreground-muted">
+					<div
+						className={`flex items-center gap-1.5 px-2 py-1.5 text-xs ${isWinner ? "bg-accent/20 font-semibold text-accent" : "text-foreground-muted"}`}
+					>
 						{filled ? <Flag name={label} /> : null}
 						<span className="flex-1 truncate">{label}</span>
+						{isWinner ? <span className="shrink-0 text-accent">✓</span> : null}
 					</div>
 				);
 			}
+
+			if (!filled) {
+				return (
+					<button
+						type="button"
+						onClick={() => openPicker(side)}
+						className="flex w-full items-start px-2 py-1.5 text-left text-xs text-foreground-muted transition-colors hover:bg-surface-2"
+					>
+						{label}
+					</button>
+				);
+			}
+
 			return (
-				<button
-					type="button"
-					onClick={() => openPicker(side)}
-					className={`flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors hover:bg-surface-2 ${filled ? "text-foreground" : "text-foreground-muted"}`}
+				<div
+					className={`flex items-center gap-1.5 px-2 py-1.5 text-xs transition-colors ${isWinner ? "bg-accent/20" : "hover:bg-surface-2"}`}
 				>
-					{filled ? <Flag name={label} /> : null}
-					<span className="flex-1 truncate">{label}</span>
-					{filled ? (
-						<span className="shrink-0 text-[10px] text-foreground-muted">
-							Change
-						</span>
-					) : null}
-				</button>
+					<button
+						type="button"
+						onClick={() => onPick(match.id, label)}
+						className={`flex min-w-0 flex-1 items-center gap-1.5 text-left ${isWinner ? "font-semibold text-accent" : "text-foreground"}`}
+					>
+						<Flag name={label} />
+						<span className="truncate">{label}</span>
+						{isWinner ? <span className="shrink-0 text-accent">✓</span> : null}
+					</button>
+					<button
+						type="button"
+						onClick={() => openPicker(side)}
+						className="shrink-0 text-[10px] text-foreground-muted transition-colors hover:text-foreground"
+					>
+						Change
+					</button>
+				</div>
 			);
 		};
 
@@ -419,12 +411,6 @@ function BracketCard({
 				{labelRow(homeDisplay, "home")}
 				<div className="h-px bg-border/30" />
 				{labelRow(awayDisplay, "away")}
-				{pickFooter ? (
-					<>
-						<div className="h-px bg-border/50" />
-						{pickFooter}
-					</>
-				) : null}
 			</div>
 		);
 	}
