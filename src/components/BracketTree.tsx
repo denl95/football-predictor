@@ -719,6 +719,24 @@ export function BracketTree({
 		});
 	}
 
+	// Clear every pick + slot fill. Marks the bracket dirty so the empty state is
+	// persisted on the next save (matching the rest of the edit flow).
+	function handleReset() {
+		if (
+			Object.keys(picks).length === 0 &&
+			Object.keys(slotPicks).length === 0
+		) {
+			return;
+		}
+		if (!window.confirm("Clear all bracket picks? This can't be undone.")) {
+			return;
+		}
+		setError(null);
+		setPicks({});
+		setSlotPicks({});
+		setDirty(true);
+	}
+
 	function r32Card(i: number): CardInfo {
 		const m = r32[i];
 		const slots = slotPicks[m.id];
@@ -894,6 +912,18 @@ export function BracketTree({
 							className="rounded-xl bg-accent px-5 py-2 text-sm font-semibold text-background transition-opacity disabled:opacity-40"
 						>
 							{pending ? "Saving…" : "Save bracket"}
+						</button>
+						<button
+							type="button"
+							onClick={handleReset}
+							disabled={
+								pending ||
+								(Object.keys(picks).length === 0 &&
+									Object.keys(slotPicks).length === 0)
+							}
+							className="rounded-xl border border-border px-5 py-2 text-sm font-semibold text-foreground-muted transition-colors hover:text-foreground disabled:opacity-40 disabled:hover:text-foreground-muted"
+						>
+							Reset
 						</button>
 						{error ? <p className="text-sm text-red-400">{error}</p> : null}
 						{!dirty && !error ? (
