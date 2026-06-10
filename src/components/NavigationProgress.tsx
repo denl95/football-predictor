@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 
 export function NavigationProgress() {
 	const pathname = usePathname();
@@ -56,7 +56,8 @@ export function NavigationProgress() {
 
 	let barTransition: string;
 	if (width === 0) barTransition = "opacity 300ms ease-out";
-	else if (width === 100) barTransition = "width 150ms ease-out, opacity 300ms ease-out";
+	else if (width === 100)
+		barTransition = "width 150ms ease-out, opacity 300ms ease-out";
 	else barTransition = "width 300ms ease-out, opacity 150ms ease-in";
 
 	return (

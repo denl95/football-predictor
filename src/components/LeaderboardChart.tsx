@@ -1,5 +1,6 @@
 "use client";
 
+import type { BarShapeProps } from "recharts";
 import {
 	Bar,
 	BarChart,
@@ -12,7 +13,6 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import type { BarShapeProps } from "recharts";
 
 const COLORS = [
 	"#10b981", // accent green
@@ -65,8 +65,15 @@ export function PointsBarChart({ data }: { readonly data: BarEntry[] }) {
 				Current standings
 			</h2>
 			<ResponsiveContainer width="100%" height={200}>
-				<BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-					<CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+				<BarChart
+					data={data}
+					margin={{ top: 4, right: 8, bottom: 0, left: -16 }}
+				>
+					<CartesianGrid
+						strokeDasharray="3 3"
+						stroke="#374151"
+						vertical={false}
+					/>
 					<XAxis
 						dataKey="name"
 						tick={{ fill: "#9ca3af", fontSize: 12 }}
@@ -106,7 +113,10 @@ export function LeaderboardChart({
 				Points over time
 			</h2>
 			<ResponsiveContainer width="100%" height={280}>
-				<LineChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
+				<LineChart
+					data={data}
+					margin={{ top: 4, right: 8, bottom: 0, left: -16 }}
+				>
 					<CartesianGrid strokeDasharray="3 3" stroke="#374151" />
 					<XAxis
 						dataKey="date"

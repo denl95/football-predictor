@@ -3,10 +3,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Flag } from "@/components/Flag";
 import { prisma } from "@/lib/db";
-import { fetchWCTeam } from "@/lib/football-data";
 import type { FDPlayer } from "@/lib/football-data";
+import { fetchWCTeam } from "@/lib/football-data";
 
-const POSITION_ORDER = ["Goalkeeper", "Defence", "Midfield", "Offence"] as const;
+const POSITION_ORDER = [
+	"Goalkeeper",
+	"Defence",
+	"Midfield",
+	"Offence",
+] as const;
 const POSITION_LABEL: Record<string, string> = {
 	Goalkeeper: "Goalkeepers",
 	Defence: "Defenders",
@@ -49,7 +54,12 @@ export default async function TeamPage({
 	if (!teamData) notFound();
 
 	// Compute tournament stats
-	let played = 0, won = 0, drawn = 0, lost = 0, gf = 0, ga = 0;
+	let played = 0,
+		won = 0,
+		drawn = 0,
+		lost = 0,
+		gf = 0,
+		ga = 0;
 	for (const m of matches) {
 		if (m.homeScore === null || m.awayScore === null) continue;
 		const isHome = m.homeTeam === teamName;
@@ -208,33 +218,37 @@ export default async function TeamPage({
 			{/* Squad */}
 			{teamData.squad.length > 0 && (
 				<div className="flex flex-col gap-4">
-					{POSITION_ORDER.filter((pos) => byPosition[pos]?.length).map((pos) => (
-						<div
-							key={pos}
-							className="overflow-hidden rounded-2xl border border-border bg-surface"
-						>
-							<div className="border-b border-border px-4 py-3">
-								<h2 className="text-sm font-semibold uppercase tracking-widest text-foreground-muted">
-									{POSITION_LABEL[pos]}
-								</h2>
+					{POSITION_ORDER.filter((pos) => byPosition[pos]?.length).map(
+						(pos) => (
+							<div
+								key={pos}
+								className="overflow-hidden rounded-2xl border border-border bg-surface"
+							>
+								<div className="border-b border-border px-4 py-3">
+									<h2 className="text-sm font-semibold uppercase tracking-widest text-foreground-muted">
+										{POSITION_LABEL[pos]}
+									</h2>
+								</div>
+								<ul>
+									{byPosition[pos].map((player) => (
+										<li
+											key={player.id}
+											className="flex items-center gap-3 border-b border-border/50 px-4 py-3 last:border-b-0"
+										>
+											<span className="flex-1 text-sm font-semibold">
+												{player.name}
+											</span>
+											<span className="text-xs text-foreground-muted">
+												{player.dateOfBirth
+													? `${calcAge(player.dateOfBirth)} yrs`
+													: ""}
+											</span>
+										</li>
+									))}
+								</ul>
 							</div>
-							<ul>
-								{byPosition[pos].map((player) => (
-									<li
-										key={player.id}
-										className="flex items-center gap-3 border-b border-border/50 px-4 py-3 last:border-b-0"
-									>
-										<span className="flex-1 text-sm font-semibold">{player.name}</span>
-										<span className="text-xs text-foreground-muted">
-											{player.dateOfBirth
-												? `${calcAge(player.dateOfBirth)} yrs`
-												: ""}
-										</span>
-									</li>
-								))}
-							</ul>
-						</div>
-					))}
+						),
+					)}
 				</div>
 			)}
 		</div>

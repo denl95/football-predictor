@@ -3,8 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/CopyButton";
-import { LeaderboardChart, PointsBarChart } from "@/components/LeaderboardChart";
 import type { BarEntry } from "@/components/LeaderboardChart";
+import {
+	LeaderboardChart,
+	PointsBarChart,
+} from "@/components/LeaderboardChart";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { auth, signOut } from "@/lib/auth";
 import { NavLinks } from "@/components/NavLinks";
+import { auth, signOut } from "@/lib/auth";
 
 export async function Navbar() {
 	const session = await auth();

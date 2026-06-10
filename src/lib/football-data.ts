@@ -29,11 +29,17 @@ export type FDTeamDetail = {
 	shortName: string;
 	tla: string;
 	crest: string;
-	coach: { name: string; dateOfBirth: string | null; nationality: string } | null;
+	coach: {
+		name: string;
+		dateOfBirth: string | null;
+		nationality: string;
+	} | null;
 	squad: FDPlayer[];
 };
 
-export async function fetchWCTeam(teamName: string): Promise<FDTeamDetail | null> {
+export async function fetchWCTeam(
+	teamName: string,
+): Promise<FDTeamDetail | null> {
 	const apiKey = process.env.FOOTBALL_DATA_API_KEY;
 	if (!apiKey) throw new Error("FOOTBALL_DATA_API_KEY is not set");
 

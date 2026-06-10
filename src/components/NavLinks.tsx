@@ -13,12 +13,13 @@ const LINKS = [
 
 export function NavLinks({ className }: Readonly<{ className?: string }>) {
 	const pathname = usePathname();
-	const navClass = className ? `flex items-center gap-1 text-sm ${className}` : "flex items-center gap-1 text-sm";
+	const navClass = className
+		? `flex items-center gap-1 text-sm ${className}`
+		: "flex items-center gap-1 text-sm";
 	return (
 		<nav className={navClass}>
 			{LINKS.map(({ href, label }) => {
-				const isActive =
-					pathname === href || pathname.startsWith(`${href}/`);
+				const isActive = pathname === href || pathname.startsWith(`${href}/`);
 				return (
 					<Link
 						key={href}
