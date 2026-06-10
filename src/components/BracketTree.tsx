@@ -122,25 +122,17 @@ function buildSuggestedSections(
 	state: PickerState,
 	secondaryTeams: string[],
 ): TeamSection[] {
-	const sections: TeamSection[] = [];
 	if (state.suggested.length > 0) {
-		sections.push({
-			id: "match",
-			heading: "In this match",
-			teams: state.suggested,
-			showGroup: true,
-		});
+		return [
+			{ id: "match", heading: null, teams: state.suggested, showGroup: true },
+		];
 	}
 	if (secondaryTeams.length > 0) {
-		const heading = state.suggested.length > 0 ? "Other teams" : null;
-		sections.push({
-			id: "other",
-			heading,
-			teams: secondaryTeams,
-			showGroup: true,
-		});
+		return [
+			{ id: "other", heading: null, teams: secondaryTeams, showGroup: true },
+		];
 	}
-	return sections;
+	return [];
 }
 
 function buildSections(
@@ -415,38 +407,33 @@ function BracketCard({
 		);
 	}
 
-	// R16+: both teams known — click a row to pick winner
+	// R16+: click a known team row to pick winner; TBD rows are inert
 	const homeSelected = winner === homeDisplay;
 	const awaySelected = winner === awayDisplay;
+	const homeTBD = isLabel(homeDisplay);
+	const awayTBD = isLabel(awayDisplay);
+
+	const teamRow = (display: string, selected: boolean, tbd: boolean) => (
+		<button
+			type="button"
+			onClick={() => !isLocked && !tbd && onPick(match.id, display)}
+			className={`flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors
+				${selected ? "bg-accent/20 font-semibold text-accent" : tbd || isLocked ? "cursor-default text-foreground-muted" : "text-foreground hover:bg-surface-2"}`}
+		>
+			{!tbd ? <Flag name={display} /> : null}
+			<span className="flex-1 truncate">{display}</span>
+			{selected ? <span className="shrink-0 text-accent">✓</span> : null}
+		</button>
+	);
 
 	return (
 		<div
 			className="overflow-hidden rounded-lg border border-border bg-surface"
 			style={{ width: CARD_W }}
 		>
-			<button
-				type="button"
-				onClick={() => !isLocked && onPick(match.id, homeDisplay)}
-				className={`flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors
-					${homeSelected ? "bg-accent/20 font-semibold text-accent" : "text-foreground hover:bg-surface-2"}
-					${isLocked ? "cursor-default" : ""}`}
-			>
-				<Flag name={homeDisplay} />
-				<span className="flex-1 truncate">{homeDisplay}</span>
-				{homeSelected ? <span className="shrink-0 text-accent">✓</span> : null}
-			</button>
+			{teamRow(homeDisplay, homeSelected, homeTBD)}
 			<div className="h-px bg-border/30" />
-			<button
-				type="button"
-				onClick={() => !isLocked && onPick(match.id, awayDisplay)}
-				className={`flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors
-					${awaySelected ? "bg-accent/20 font-semibold text-accent" : "text-foreground hover:bg-surface-2"}
-					${isLocked ? "cursor-default" : ""}`}
-			>
-				<Flag name={awayDisplay} />
-				<span className="flex-1 truncate">{awayDisplay}</span>
-				{awaySelected ? <span className="shrink-0 text-accent">✓</span> : null}
-			</button>
+			{teamRow(awayDisplay, awaySelected, awayTBD)}
 		</div>
 	);
 }
