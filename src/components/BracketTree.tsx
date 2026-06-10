@@ -161,10 +161,8 @@ function buildSections(
 			]
 		: state.suggested;
 	const secondaryTeams = allTeams.filter((t) => !primaryTeams.includes(t));
-	const isSingleGroup =
-		(state.homeGroup === null) !== (state.awayGroup === null);
 	return isGroupBased
-		? buildGroupedSections(state, isSingleGroup ? [] : secondaryTeams)
+		? buildGroupedSections(state, [])
 		: buildSuggestedSections(state, secondaryTeams);
 }
 
@@ -348,7 +346,12 @@ function BracketCard({
 	}
 
 	// R32 / TBD: label rows (non-clickable) + explicit pick button
-	if (isLabel(homeDisplay) || isLabel(awayDisplay)) {
+	if (
+		isLabel(homeDisplay) ||
+		isLabel(awayDisplay) ||
+		homeGroup !== null ||
+		awayGroup !== null
+	) {
 		let pickFooter: ReactNode = null;
 		if (!isLocked) {
 			pickFooter = (
