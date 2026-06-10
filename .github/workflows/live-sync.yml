@@ -36,14 +36,22 @@ jobs:
             echo "::error::APP_URL and/or CRON_SECRET repository secret is not set"
             exit 1
           fi
-          status=$(curl -sS -X GET \
+          # Normalise: strip trailing slash, default to https:// if no scheme given.
+          base="${APP_URL%/}"
+          case "$base" in
+            http://*|https://*) ;;
+            *) base="https://$base" ;;
+          esac
+          # -L --location-trusted follows redirects (e.g. http->https, Vercel alias
+          # -> canonical domain) and keeps the Authorization header across them.
+          status=$(curl -sS -L --location-trusted -X GET \
             -o /tmp/sync-response.json -w "%{http_code}" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
-            "${APP_URL%/}/api/cron/sync")
+            "${base}/api/cron/sync")
           echo "HTTP ${status}"
           cat /tmp/sync-response.json || true
           echo ""
-          if [ "${status}" != "200" ]; then
-            echo "::error::Sync failed with HTTP ${status}"
+          if [ "${status}" != "200" ] || ! grep -q '"ok"' /tmp/sync-response.json; then
+            echo "::error::Sync failed (HTTP ${status}). If the response is a login / 'Authentication Required' page, the URL is redirecting: set APP_URL to your canonical production domain (with https://) and ensure Vercel Deployment Protection isn't enabled for it."
             exit 1
           fi
