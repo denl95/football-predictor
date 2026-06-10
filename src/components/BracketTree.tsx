@@ -591,6 +591,12 @@ export function BracketTree({
 		return map;
 	}, [r32, r16, qf, sf, finalMatch]);
 
+	const r32ById = useMemo(() => {
+		const map: Record<string, BMatch> = {};
+		for (const m of r32) map[m.id] = m;
+		return map;
+	}, [r32]);
+
 	function cascadeClear(
 		prev: Record<string, string>,
 		fromMatchId: string,
@@ -604,23 +610,45 @@ export function BracketTree({
 		return next;
 	}
 
+	// The real teams an R32 match can currently be won by: its filled slots, or its
+	// actual teams once the group stage resolves them.
+	function r32SlotTeams(
+		matchId: string,
+		slots: { home?: string; away?: string } | undefined,
+	): string[] {
+		const m = r32ById[matchId];
+		const home =
+			slots?.home ?? (m && m.homeTeam !== "TBD" ? m.homeTeam : undefined);
+		const away =
+			slots?.away ?? (m && m.awayTeam !== "TBD" ? m.awayTeam : undefined);
+		return [home, away].filter((t): t is string => t !== undefined);
+	}
+
+	// After a slot changes, the saved winner may no longer be one of the match's
+	// teams (e.g. it was replaced or cleared) — drop the now-invalid winner and
+	// cascade so it stops propagating into later rounds.
+	function reconcileWinner(
+		matchId: string,
+		newSlots: { home?: string; away?: string } | undefined,
+	) {
+		const winner = picks[matchId];
+		if (!winner) return;
+		if (r32SlotTeams(matchId, newSlots).includes(winner)) return;
+		setPicks((prev) => {
+			const next = { ...prev };
+			delete next[matchId];
+			return cascadeClear(next, matchId);
+		});
+		setDirty(true);
+	}
+
 	function handlePick(key: string, team: string) {
 		if (key.endsWith(":home") || key.endsWith(":away")) {
-			const [matchId, side] = key.split(":");
-			const replacedTeam = slotPicks[matchId]?.[side as "home" | "away"];
-			setSlotPicks((prev) => ({
-				...prev,
-				[matchId]: { ...prev[matchId], [side]: team },
-			}));
-			// If the replaced slot team was the winner pick for this R32 match, clear it + cascade.
-			if (replacedTeam && picks[matchId] === replacedTeam) {
-				setPicks((prev) => {
-					const next = { ...prev };
-					delete next[matchId];
-					return cascadeClear(next, matchId);
-				});
-				setDirty(true);
-			}
+			const [matchId, rawSide] = key.split(":");
+			const side = rawSide as "home" | "away";
+			const newSlots = { ...slotPicks[matchId], [side]: team };
+			setSlotPicks((prev) => ({ ...prev, [matchId]: newSlots }));
+			reconcileWinner(matchId, newSlots);
 		} else {
 			setPicks((prev) => cascadeClear({ ...prev, [key]: team }, key));
 			setDirty(true);
@@ -629,15 +657,16 @@ export function BracketTree({
 
 	function handleClearPick(key: string) {
 		if (key.endsWith(":home") || key.endsWith(":away")) {
-			const [matchId, side] = key.split(":");
+			const [matchId, rawSide] = key.split(":");
+			const side = rawSide as "home" | "away";
+			const newSlots = { ...slotPicks[matchId] };
+			delete newSlots[side];
 			setSlotPicks((prev) => {
 				const next = { ...prev };
-				if (next[matchId]) {
-					next[matchId] = { ...next[matchId] };
-					delete next[matchId][side as "home" | "away"];
-				}
+				if (next[matchId]) next[matchId] = newSlots;
 				return next;
 			});
+			reconcileWinner(matchId, newSlots);
 		} else {
 			setPicks((prev) => {
 				const next = { ...prev };
