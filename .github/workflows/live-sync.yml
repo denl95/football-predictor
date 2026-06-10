@@ -7,15 +7,13 @@ name: Live match sync
 #   APP_URL      Base URL of the deployed app, e.g. https://your-app.vercel.app
 #   CRON_SECRET  Same value as the CRON_SECRET env var in Vercel
 #
-# Note on cost/cadence: GitHub Actions' minimum schedule granularity is 5 minutes
-# and runs are best-effort (can be delayed under load). Minutes are free/unlimited
-# for public repos; private repos get 2000 min/month and bill each run as >=1 min,
-# so every-5-min (~288 runs/day) will exceed the free tier — widen the interval
-# (e.g. "*/15 * * * *") or restrict to match hours if this repo is private.
+# Note on cadence: GitHub Actions cron is best-effort — runs are often delayed and
+# individual ticks can be dropped under load, so treat 15 min as "roughly every 15
+# minutes", not exact. Actions minutes are free/unlimited for public repos.
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch: {}
 
 # Don't let a slow run overlap with the next scheduled one.
