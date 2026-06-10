@@ -21,7 +21,7 @@ const prisma = new PrismaClient({ adapter });
 // Each comment notes the official FIFA match number this slot corresponds to.
 const R32_LABELS: Record<string, [string, string]> = {
 	"537417": ["Group E Winner", "Best 3rd Place"], // M74
-	"537423": ["Group E Runner-up", "Group I Runner-up"], // M77
+	"537423": ["Group I Winner", "Best 3rd Place"], // M77
 	"537415": ["Group A Runner-up", "Group B Runner-up"], // M73
 	"537418": ["Group F Winner", "Group C Runner-up"], // M75
 	"537424": ["Group K Runner-up", "Group L Runner-up"], // M83
@@ -29,7 +29,7 @@ const R32_LABELS: Record<string, [string, string]> = {
 	"537425": ["Group D Winner", "Best 3rd Place"], // M81
 	"537426": ["Group G Winner", "Best 3rd Place"], // M82
 	"537422": ["Group C Winner", "Group F Runner-up"], // M76
-	"537421": ["Group I Winner", "Best 3rd Place"], // M78
+	"537421": ["Group E Runner-up", "Group I Runner-up"], // M78
 	"537420": ["Group A Winner", "Best 3rd Place"], // M79
 	"537419": ["Group L Winner", "Best 3rd Place"], // M80
 	"537429": ["Group J Winner", "Group H Runner-up"], // M86
