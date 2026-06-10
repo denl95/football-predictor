@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { saveBracketPicks } from "@/actions/bracket";
 import { Flag } from "@/components/Flag";
 import { GROUPS, teamsForLabel } from "@/lib/bracket";
@@ -559,15 +559,54 @@ export function BracketTree({
 	const [picker, setPicker] = useState<PickerState | null>(null);
 	const [pending, startTransition] = useTransition();
 
+	// Maps each match ID to the match that uses its winner as an input.
+	const parentOf = useMemo(() => {
+		const map: Record<string, string> = {};
+		for (let i = 0; i < r32.length; i++) {
+			if (r16[Math.floor(i / 2)]) map[r32[i].id] = r16[Math.floor(i / 2)].id;
+		}
+		for (let i = 0; i < r16.length; i++) {
+			if (qf[Math.floor(i / 2)]) map[r16[i].id] = qf[Math.floor(i / 2)].id;
+		}
+		for (let i = 0; i < qf.length; i++) {
+			if (sf[Math.floor(i / 2)]) map[qf[i].id] = sf[Math.floor(i / 2)].id;
+		}
+		if (finalMatch) for (const s of sf) map[s.id] = finalMatch.id;
+		return map;
+	}, [r32, r16, qf, sf, finalMatch]);
+
+	function cascadeClear(
+		prev: Record<string, string>,
+		fromMatchId: string,
+	): Record<string, string> {
+		const next = { ...prev };
+		let cur = fromMatchId;
+		while (parentOf[cur]) {
+			cur = parentOf[cur];
+			delete next[cur];
+		}
+		return next;
+	}
+
 	function handlePick(key: string, team: string) {
 		if (key.endsWith(":home") || key.endsWith(":away")) {
 			const [matchId, side] = key.split(":");
+			const replacedTeam = slotPicks[matchId]?.[side as "home" | "away"];
 			setSlotPicks((prev) => ({
 				...prev,
 				[matchId]: { ...prev[matchId], [side]: team },
 			}));
+			// If the replaced slot team was the winner pick for this R32 match, clear it + cascade.
+			if (replacedTeam && picks[matchId] === replacedTeam) {
+				setPicks((prev) => {
+					const next = { ...prev };
+					delete next[matchId];
+					return cascadeClear(next, matchId);
+				});
+				setDirty(true);
+			}
 		} else {
-			setPicks((prev) => ({ ...prev, [key]: team }));
+			setPicks((prev) => cascadeClear({ ...prev, [key]: team }, key));
 			setDirty(true);
 		}
 	}
