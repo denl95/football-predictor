@@ -69,6 +69,7 @@ src/
     db.ts                # Prisma client singleton (PrismaPg driver adapter)
     points.ts            # calculatePoints() — match scoring
     bracket.ts           # STAGE_POINTS, GROUPS, teamsForLabel() — bracket scoring/labels
+    prediction-status.ts # 48h prediction window: navbar badge + league ready/pending
     football-data.ts     # football-data.org API client (used by cron sync)
   components/            # Navbar, NavLinks, BracketTree, LeaderboardChart,
                          # PredictionForm, Flag, CopyButton, DeleteUserButton,

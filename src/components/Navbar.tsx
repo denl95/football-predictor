@@ -2,10 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { NavLinks } from "@/components/NavLinks";
 import { auth, signOut } from "@/lib/auth";
+import { countMissingPredictions } from "@/lib/prediction-status";
 
 export async function Navbar() {
 	const session = await auth();
 	const isAdmin = session?.user?.email === process.env.ADMIN_EMAIL;
+	const pendingCount = session?.user?.id
+		? await countMissingPredictions(session.user.id)
+		: 0;
 
 	return (
 		<header className="sticky top-0 z-50 border-b border-border/60 bg-surface/80 backdrop-blur-md">
@@ -21,7 +25,7 @@ export async function Navbar() {
 					</Link>
 
 					<div className="hidden md:block">
-						<NavLinks isAdmin={isAdmin} />
+						<NavLinks isAdmin={isAdmin} pendingCount={pendingCount} />
 					</div>
 
 					{session?.user && (
@@ -54,7 +58,11 @@ export async function Navbar() {
 
 				{/* Mobile nav row */}
 				<div className="md:hidden overflow-x-auto border-t border-border/40 py-1.5 -mx-4 px-2">
-					<NavLinks className="min-w-max" isAdmin={isAdmin} />
+					<NavLinks
+						className="min-w-max"
+						isAdmin={isAdmin}
+						pendingCount={pendingCount}
+					/>
 				</div>
 			</div>
 		</header>

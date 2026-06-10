@@ -12,6 +12,10 @@ import { RemoveMemberButton } from "@/components/RemoveMemberButton";
 import { RenameLeagueForm } from "@/components/RenameLeagueForm";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import {
+	memberPredictionStatus,
+	windowMatchIds,
+} from "@/lib/prediction-status";
 
 export default async function LeaguePage({
 	params,
@@ -72,6 +76,10 @@ export default async function LeaguePage({
 	// Build chart data: cumulative points over time, scoped to league members
 	const memberIds = league.members.map((m) => m.userId);
 	const playerNames = ranked.map((u) => u.name);
+
+	const windowIds = await windowMatchIds();
+	const predictionStatus = await memberPredictionStatus(memberIds, windowIds);
+	const hasPredictionWindow = windowIds.length > 0;
 
 	const finishedPredictions = await prisma.prediction.findMany({
 		where: {
@@ -203,9 +211,22 @@ export default async function LeaguePage({
 													</span>
 												)}
 											</div>
-											<div className="text-xs text-foreground-muted">
-												{player.predictionsScored} result
-												{player.predictionsScored !== 1 ? "s" : ""} scored
+											<div className="flex items-center gap-2 text-xs text-foreground-muted">
+												<span>
+													{player.predictionsScored} result
+													{player.predictionsScored !== 1 ? "s" : ""} scored
+												</span>
+												{hasPredictionWindow ? (
+													predictionStatus[player.id] === "ready" ? (
+														<span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">
+															✓ ready
+														</span>
+													) : (
+														<span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-foreground-muted">
+															pending
+														</span>
+													)
+												) : null}
 											</div>
 										</div>
 

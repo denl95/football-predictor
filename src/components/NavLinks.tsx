@@ -14,7 +14,8 @@ const LINKS = [
 export function NavLinks({
 	className,
 	isAdmin = false,
-}: Readonly<{ className?: string; isAdmin?: boolean }>) {
+	pendingCount = 0,
+}: Readonly<{ className?: string; isAdmin?: boolean; pendingCount?: number }>) {
 	const pathname = usePathname();
 	const links = isAdmin
 		? [...LINKS, { href: "/admin", label: "Admin" }]
@@ -26,17 +27,23 @@ export function NavLinks({
 		<nav className={navClass}>
 			{links.map(({ href, label }) => {
 				const isActive = pathname === href || pathname.startsWith(`${href}/`);
+				const showBadge = href === "/matches" && pendingCount > 0;
 				return (
 					<Link
 						key={href}
 						href={href}
-						className={`rounded-lg px-3 py-1.5 transition-colors ${
+						className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-colors ${
 							isActive
 								? "bg-surface-2 text-foreground"
 								: "text-foreground-muted hover:bg-surface-2 hover:text-foreground"
 						}`}
 					>
 						{label}
+						{showBadge ? (
+							<span className="rounded-full bg-gold/20 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-gold">
+								{pendingCount}
+							</span>
+						) : null}
 					</Link>
 				);
 			})}
