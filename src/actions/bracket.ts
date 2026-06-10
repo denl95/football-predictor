@@ -61,11 +61,10 @@ export async function finaliseBracketMatch(
 	await Promise.all(
 		pickList.map((p) => {
 			let earned = p.predictedWinner === winner ? pts : 0;
-			// Final match: everyone who picked either finalist earns 20pts;
-			// whoever picked the champion additionally earns 30pts.
+			// Final: both finalists earn 20pts; champion picker earns an extra 30pts.
 			if (match.stage === "FINAL") {
 				earned =
-					pts +
+					(STAGE_POINTS.FINAL ?? 0) +
 					(p.predictedWinner === winner ? (STAGE_POINTS.CHAMPION ?? 0) : 0);
 			}
 			return prisma.bracketMatchPick.update({
