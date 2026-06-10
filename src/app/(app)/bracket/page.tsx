@@ -1,43 +1,50 @@
+import { BracketTree } from "@/components/BracketTree";
 import { auth } from "@/lib/auth";
+import { STAGE_LABEL, STAGE_POINTS } from "@/lib/bracket";
 import { prisma } from "@/lib/db";
-import { BRACKET_STAGES, STAGE_POINTS } from "@/lib/bracket";
-import { BracketPicker } from "@/components/BracketPicker";
-import type { BracketStage } from "@/generated/prisma/client";
 
 export default async function BracketPage() {
 	const session = await auth();
 
-	// Collect all 48 WC teams from group stage matches
-	const matches = await prisma.match.findMany({
-		where: { stage: "GROUP" },
-		select: { homeTeam: true, awayTeam: true },
+	// All knockout matches sorted by date
+	const knockoutMatches = await prisma.match.findMany({
+		where: { stage: { not: "GROUP" } },
+		orderBy: { scheduledAt: "asc" },
 	});
-	const teamSet = new Set<string>();
-	for (const m of matches) {
-		teamSet.add(m.homeTeam);
-		teamSet.add(m.awayTeam);
-	}
-	const allTeams = [...teamSet].sort();
+
+	const r32 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_32");
+	const r16 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_16");
+	const qf = knockoutMatches.filter((m) => m.stage === "QUARTER_FINAL");
+	const sf = knockoutMatches.filter((m) => m.stage === "SEMI_FINAL");
+	const finalMatch = knockoutMatches.find((m) => m.stage === "FINAL") ?? null;
 
 	// User's existing picks
 	const rawPicks = session?.user?.id
-		? await prisma.bracketPick.findMany({
+		? await prisma.bracketMatchPick.findMany({
 				where: { userId: session.user.id },
 			})
 		: [];
 
-	const picksByStage: Partial<Record<BracketStage, string[]>> = {};
-	for (const p of rawPicks) {
-		(picksByStage[p.stage] ??= []).push(p.team);
-	}
+	const initialPicks: Record<string, string> = {};
+	for (const p of rawPicks) initialPicks[p.matchId] = p.predictedWinner;
 
-	// Bracket locks once any non-group match is no longer UPCOMING
+	// Lock state
 	const lockedMatch = await prisma.match.findFirst({
 		where: { stage: { not: "GROUP" }, status: { not: "UPCOMING" } },
 	});
-	const isLocked = !!lockedMatch;
 
-	// Total bracket points earned so far
+	// All WC teams from group stage
+	const groupMatches = await prisma.match.findMany({
+		where: { stage: "GROUP" },
+		select: { homeTeam: true, awayTeam: true },
+	});
+	const teamSet = new Set<string>();
+	for (const m of groupMatches) {
+		teamSet.add(m.homeTeam);
+		teamSet.add(m.awayTeam);
+	}
+	const allTeams = [...teamSet].sort((a, b) => a.localeCompare(b));
+
 	const totalPoints = rawPicks.reduce((sum, p) => sum + (p.points ?? 0), 0);
 	const hasPoints = rawPicks.some((p) => p.points !== null);
 
@@ -46,13 +53,12 @@ export default async function BracketPage() {
 			<div className="flex flex-col gap-1">
 				<h1 className="text-2xl font-bold">Tournament Bracket</h1>
 				<p className="text-sm text-foreground-muted">
-					Pick which teams advance through each knockout round. Picks lock when
-					the first knockout match kicks off.
+					Predict who advances through each knockout round. Picks lock when the
+					first knockout match kicks off.
 				</p>
 			</div>
 
-			{/* Points earned */}
-			{hasPoints && (
+			{hasPoints ? (
 				<div className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-5 py-4">
 					<span className="text-2xl font-bold text-gold tabular-nums">
 						{totalPoints}
@@ -61,28 +67,24 @@ export default async function BracketPage() {
 						bracket points earned
 					</span>
 				</div>
-			)}
+			) : null}
 
 			{/* Scoring key */}
 			<div className="flex flex-wrap gap-2">
-				{BRACKET_STAGES.map((stage) => (
+				{(
+					[
+						"ROUND_OF_32",
+						"ROUND_OF_16",
+						"QUARTER_FINAL",
+						"SEMI_FINAL",
+						"FINAL",
+					] as const
+				).map((stage) => (
 					<div
 						key={stage}
 						className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs"
 					>
-						<span className="text-foreground-muted">
-							{stage === "ROUND_OF_32"
-								? "R32"
-								: stage === "ROUND_OF_16"
-									? "R16"
-									: stage === "QUARTER_FINAL"
-										? "QF"
-										: stage === "SEMI_FINAL"
-											? "SF"
-											: stage === "FINAL"
-												? "Final"
-												: "🏆"}
-						</span>
+						<span className="text-foreground-muted">{STAGE_LABEL[stage]}</span>
 						<span className="font-semibold text-accent">
 							+{STAGE_POINTS[stage]}pt
 							{STAGE_POINTS[stage] !== 1 ? "s" : ""}
@@ -91,10 +93,15 @@ export default async function BracketPage() {
 				))}
 			</div>
 
-			<BracketPicker
+			<BracketTree
+				r32={r32}
+				r16={r16}
+				qf={qf}
+				sf={sf}
+				finalMatch={finalMatch}
+				initialPicks={initialPicks}
 				allTeams={allTeams}
-				initialPicks={picksByStage as Record<string, string[]>}
-				isLocked={isLocked}
+				isLocked={!!lockedMatch}
 			/>
 		</div>
 	);

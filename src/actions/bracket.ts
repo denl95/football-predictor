@@ -2,76 +2,67 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { STAGE_POINTS } from "@/lib/bracket";
 import { prisma } from "@/lib/db";
-import { BRACKET_STAGES, STAGE_LIMIT, STAGE_POINTS } from "@/lib/bracket";
-import type { BracketStage } from "@/generated/prisma/client";
 
 export type BracketActionResult =
 	| { success: true }
 	| { success: false; error: string };
 
-async function isLocked(): Promise<boolean> {
+async function isBracketLocked(): Promise<boolean> {
 	const match = await prisma.match.findFirst({
 		where: { stage: { not: "GROUP" }, status: { not: "UPCOMING" } },
 	});
 	return !!match;
 }
 
+/** Upsert all bracket picks in one go (client sends full picks map). */
 export async function saveBracketPicks(
-	picks: Partial<Record<string, string[]>>,
+	picks: Record<string, string>,
 ): Promise<BracketActionResult> {
 	const session = await auth();
 	if (!session?.user?.id) return { success: false, error: "Unauthorised" };
-
-	if (await isLocked()) {
+	if (await isBracketLocked())
 		return { success: false, error: "Bracket is locked" };
-	}
-
-	for (const stage of BRACKET_STAGES) {
-		const teams = picks[stage] ?? [];
-		if (teams.length > STAGE_LIMIT[stage]) {
-			return {
-				success: false,
-				error: `Too many picks for ${stage} (max ${STAGE_LIMIT[stage]})`,
-			};
-		}
-	}
 
 	const userId = session.user.id;
 
 	await prisma.$transaction(async (tx) => {
-		await tx.bracketPick.deleteMany({ where: { userId } });
-		const rows = BRACKET_STAGES.flatMap((stage) =>
-			(picks[stage] ?? []).map((team) => ({ userId, stage, team })),
-		);
-		if (rows.length > 0) {
-			await tx.bracketPick.createMany({ data: rows });
-		}
+		await tx.bracketMatchPick.deleteMany({ where: { userId } });
+		const rows = Object.entries(picks).map(([matchId, predictedWinner]) => ({
+			userId,
+			matchId,
+			predictedWinner,
+		}));
+		if (rows.length > 0) await tx.bracketMatchPick.createMany({ data: rows });
 	});
 
 	revalidatePath("/bracket");
 	return { success: true };
 }
 
-// Called by admin once a knockout stage is complete with the actual qualified teams.
-export async function finaliseBracketStage(
-	stage: BracketStage,
-	qualifiedTeams: string[],
+/** Admin: score picks for a completed knockout match. */
+export async function finaliseBracketMatch(
+	matchId: string,
+	winner: string,
 ): Promise<void> {
 	const session = await auth();
-	if (session?.user?.email !== process.env.ADMIN_EMAIL) {
+	if (session?.user?.email !== process.env.ADMIN_EMAIL)
 		throw new Error("Forbidden");
-	}
 
-	const picks = await prisma.bracketPick.findMany({ where: { stage } });
-	const qualifiedSet = new Set(qualifiedTeams);
-	const pts = STAGE_POINTS[stage];
+	const match = await prisma.match.findUnique({ where: { id: matchId } });
+	if (!match) throw new Error("Match not found");
+
+	const pts = STAGE_POINTS[match.stage] ?? 0;
+	const pickList = await prisma.bracketMatchPick.findMany({
+		where: { matchId },
+	});
 
 	await Promise.all(
-		picks.map((p) =>
-			prisma.bracketPick.update({
+		pickList.map((p) =>
+			prisma.bracketMatchPick.update({
 				where: { id: p.id },
-				data: { points: qualifiedSet.has(p.team) ? pts : 0 },
+				data: { points: p.predictedWinner === winner ? pts : 0 },
 			}),
 		),
 	);
