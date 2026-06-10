@@ -4,6 +4,7 @@ export const STAGE_POINTS: Record<string, number> = {
 	QUARTER_FINAL: 4,
 	SEMI_FINAL: 8,
 	FINAL: 20,
+	CHAMPION: 30,
 };
 
 export const STAGE_LABEL: Record<string, string> = {
@@ -11,7 +12,8 @@ export const STAGE_LABEL: Record<string, string> = {
 	ROUND_OF_16: "Round of 16",
 	QUARTER_FINAL: "Quarter-finals",
 	SEMI_FINAL: "Semi-finals",
-	FINAL: "Final",
+	FINAL: "Finalist",
+	CHAMPION: "Champion",
 };
 
 // Groups from the WC 2026 draw

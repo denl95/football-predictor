@@ -78,16 +78,18 @@ export default async function BracketPage() {
 						"QUARTER_FINAL",
 						"SEMI_FINAL",
 						"FINAL",
+						"CHAMPION",
 					] as const
 				).map((stage) => (
 					<div
 						key={stage}
-						className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-xs"
+						className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${stage === "CHAMPION" ? "border-gold/40 bg-gold/10" : "border-border bg-surface"}`}
 					>
 						<span className="text-foreground-muted">{STAGE_LABEL[stage]}</span>
-						<span className="font-semibold text-accent">
-							+{STAGE_POINTS[stage]}pt
-							{STAGE_POINTS[stage] !== 1 ? "s" : ""}
+						<span
+							className={`font-semibold ${stage === "CHAMPION" ? "text-gold" : "text-accent"}`}
+						>
+							+{STAGE_POINTS[stage]}pts
 						</span>
 					</div>
 				))}

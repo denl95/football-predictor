@@ -416,9 +416,10 @@ function BracketCard({
 	const teamRow = (display: string, selected: boolean, tbd: boolean) => (
 		<button
 			type="button"
-			onClick={() => !isLocked && !tbd && onPick(match.id, display)}
-			className={`flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors
-				${selected ? "bg-accent/20 font-semibold text-accent" : tbd || isLocked ? "cursor-default text-foreground-muted" : "text-foreground hover:bg-surface-2"}`}
+			disabled={tbd || isLocked}
+			onClick={() => onPick(match.id, display)}
+			className={`flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors disabled:cursor-default
+				${selected ? "bg-accent/20 font-semibold text-accent" : tbd ? "text-foreground-muted opacity-40" : isLocked ? "text-foreground-muted" : "text-foreground hover:bg-surface-2"}`}
 		>
 			{!tbd ? <Flag name={display} /> : null}
 			<span className="flex-1 truncate">{display}</span>

@@ -59,12 +59,20 @@ export async function finaliseBracketMatch(
 	});
 
 	await Promise.all(
-		pickList.map((p) =>
-			prisma.bracketMatchPick.update({
+		pickList.map((p) => {
+			let earned = p.predictedWinner === winner ? pts : 0;
+			// Final match: everyone who picked either finalist earns 20pts;
+			// whoever picked the champion additionally earns 30pts.
+			if (match.stage === "FINAL") {
+				earned =
+					pts +
+					(p.predictedWinner === winner ? (STAGE_POINTS.CHAMPION ?? 0) : 0);
+			}
+			return prisma.bracketMatchPick.update({
 				where: { id: p.id },
-				data: { points: p.predictedWinner === winner ? pts : 0 },
-			}),
-		),
+				data: { points: earned },
+			});
+		}),
 	);
 
 	revalidatePath("/bracket");
