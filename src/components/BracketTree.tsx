@@ -161,8 +161,10 @@ function buildSections(
 			]
 		: state.suggested;
 	const secondaryTeams = allTeams.filter((t) => !primaryTeams.includes(t));
+	const isSingleGroup =
+		(state.homeGroup === null) !== (state.awayGroup === null);
 	return isGroupBased
-		? buildGroupedSections(state, secondaryTeams)
+		? buildGroupedSections(state, isSingleGroup ? [] : secondaryTeams)
 		: buildSuggestedSections(state, secondaryTeams);
 }
 
