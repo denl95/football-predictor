@@ -37,10 +37,12 @@ export default async function BracketPage() {
 		}
 	}
 
-	// Lock state — bracket locks 24h after the first tournament match kicks off.
+	// Bracket locks 24h after the first scheduled match kicks off (purely
+	// time-based — no status check so a quick first-match result doesn't
+	// close the window early).
 	const firstMatch = await prisma.match.findFirst({
 		orderBy: { scheduledAt: "asc" },
-		select: { scheduledAt: true, status: true },
+		select: { scheduledAt: true },
 	});
 	const lockAt = firstMatch
 		? new Date(firstMatch.scheduledAt.getTime() + 24 * 60 * 60 * 1000)

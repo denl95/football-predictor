@@ -9,19 +9,19 @@ export type BracketActionResult =
 	| { success: true }
 	| { success: false; error: string };
 
-// How many hours after the first match kicks off the bracket still accepts picks.
+// Hours after the first scheduled match that the bracket locks.
 const LOCK_OFFSET_HOURS = 24;
 
 async function isBracketLocked(): Promise<boolean> {
 	const first = await prisma.match.findFirst({
 		orderBy: { scheduledAt: "asc" },
-		select: { scheduledAt: true, status: true },
+		select: { scheduledAt: true },
 	});
 	if (!first) return false;
 	const lockAt = new Date(
 		first.scheduledAt.getTime() + LOCK_OFFSET_HOURS * 60 * 60 * 1000,
 	);
-	return first.status === "FINISHED" || lockAt <= new Date();
+	return lockAt <= new Date();
 }
 
 /** Upsert all bracket picks in one go (client sends full picks + R32 slot fills). */
