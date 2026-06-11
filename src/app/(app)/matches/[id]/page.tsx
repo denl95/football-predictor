@@ -2,10 +2,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Flag } from "@/components/Flag";
+import { LocalDateTime } from "@/components/LocalDateTime";
 import { PredictionForm } from "@/components/PredictionForm";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { hasMatchStarted } from "@/lib/match-lock";
+
+const MATCH_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
+	weekday: "short",
+	day: "numeric",
+	month: "long",
+	year: "numeric",
+	hour: "2-digit",
+	minute: "2-digit",
+	timeZoneName: "short",
+};
 
 export default async function MatchPage({
 	params,
@@ -66,16 +77,14 @@ export default async function MatchPage({
 			<div className="rounded-2xl border border-border bg-surface p-6">
 				<div className="mb-4 flex items-center justify-between text-xs text-foreground-muted">
 					<span>{match.group}</span>
-					<span>
-						{new Date(match.scheduledAt).toLocaleDateString("en-GB", {
-							weekday: "short",
-							day: "numeric",
-							month: "long",
-							year: "numeric",
-							hour: "2-digit",
-							minute: "2-digit",
-						})}
-					</span>
+					<LocalDateTime
+						iso={match.scheduledAt.toISOString()}
+						fallback={match.scheduledAt.toLocaleString(
+							"en-GB",
+							MATCH_TIME_OPTIONS,
+						)}
+						options={MATCH_TIME_OPTIONS}
+					/>
 				</div>
 
 				<div className="flex items-center justify-between gap-4">

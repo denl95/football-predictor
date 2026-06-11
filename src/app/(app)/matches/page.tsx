@@ -1,10 +1,18 @@
 import Link from "next/link";
 import { Flag } from "@/components/Flag";
+import { LocalDateTime } from "@/components/LocalDateTime";
 import type { Match, Prediction } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 type MatchWithPrediction = Match & { prediction?: Prediction | null };
+
+const CARD_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
+	day: "numeric",
+	month: "short",
+	hour: "2-digit",
+	minute: "2-digit",
+};
 
 function getStatusBadge(status: Match["status"]) {
 	if (status === "LIVE")
@@ -40,14 +48,14 @@ function MatchCard({ match }: { match: MatchWithPrediction }) {
 				<span>{match.group}</span>
 				<div className="flex items-center gap-2">
 					{getStatusBadge(match.status)}
-					<span>
-						{new Date(match.scheduledAt).toLocaleDateString("en-GB", {
-							day: "numeric",
-							month: "short",
-							hour: "2-digit",
-							minute: "2-digit",
-						})}
-					</span>
+					<LocalDateTime
+						iso={match.scheduledAt.toISOString()}
+						fallback={match.scheduledAt.toLocaleString(
+							"en-GB",
+							CARD_TIME_OPTIONS,
+						)}
+						options={CARD_TIME_OPTIONS}
+					/>
 				</div>
 			</div>
 
