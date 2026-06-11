@@ -24,9 +24,10 @@ async function isBracketLocked(): Promise<boolean> {
 	return first.status === "FINISHED" || lockAt <= new Date();
 }
 
-/** Upsert all bracket picks in one go (client sends full picks map). */
+/** Upsert all bracket picks in one go (client sends full picks + R32 slot fills). */
 export async function saveBracketPicks(
 	picks: Record<string, string>,
+	slotPicks: Record<string, { home?: string; away?: string }>,
 ): Promise<BracketActionResult> {
 	const session = await auth();
 	if (!session?.user?.id) return { success: false, error: "Unauthorised" };
@@ -35,12 +36,20 @@ export async function saveBracketPicks(
 
 	const userId = session.user.id;
 
+	// Collect all matchIds that have either a winner pick or slot fills.
+	const allMatchIds = new Set([
+		...Object.keys(picks),
+		...Object.keys(slotPicks),
+	]);
+
 	await prisma.$transaction(async (tx) => {
 		await tx.bracketMatchPick.deleteMany({ where: { userId } });
-		const rows = Object.entries(picks).map(([matchId, predictedWinner]) => ({
+		const rows = [...allMatchIds].map((matchId) => ({
 			userId,
 			matchId,
-			predictedWinner,
+			predictedWinner: picks[matchId] ?? "",
+			homeSlotTeam: slotPicks[matchId]?.home ?? null,
+			awaySlotTeam: slotPicks[matchId]?.away ?? null,
 		}));
 		if (rows.length > 0) await tx.bracketMatchPick.createMany({ data: rows });
 	});

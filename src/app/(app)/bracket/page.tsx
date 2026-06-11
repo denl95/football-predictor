@@ -26,7 +26,16 @@ export default async function BracketPage() {
 		: [];
 
 	const initialPicks: Record<string, string> = {};
-	for (const p of rawPicks) initialPicks[p.matchId] = p.predictedWinner;
+	const initialSlotPicks: Record<string, { home?: string; away?: string }> = {};
+	for (const p of rawPicks) {
+		if (p.predictedWinner) initialPicks[p.matchId] = p.predictedWinner;
+		if (p.homeSlotTeam || p.awaySlotTeam) {
+			initialSlotPicks[p.matchId] = {
+				...(p.homeSlotTeam ? { home: p.homeSlotTeam } : {}),
+				...(p.awaySlotTeam ? { away: p.awaySlotTeam } : {}),
+			};
+		}
+	}
 
 	// Lock state — bracket locks 24h after the first tournament match kicks off.
 	const firstMatch = await prisma.match.findFirst({
@@ -111,6 +120,7 @@ export default async function BracketPage() {
 				initialPicks={initialPicks}
 				allTeams={allTeams}
 				isLocked={isLocked}
+				initialSlotPicks={initialSlotPicks}
 			/>
 		</div>
 	);

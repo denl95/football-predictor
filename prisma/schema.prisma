@@ -138,6 +138,8 @@ model BracketMatchPick {
   userId          String
   matchId         String
   predictedWinner String
+  homeSlotTeam    String?
+  awaySlotTeam    String?
   points          Int?
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   match           Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)

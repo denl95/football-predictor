@@ -97,36 +97,6 @@ function parseGroupLetter(label: string | null): string | null {
 	return m?.[1] ?? null;
 }
 
-// Which R32 slot a real team belongs to: the group slot whose group contains it,
-// otherwise the "Best 3rd Place" slot. Used to rebuild slot state from saved winners.
-function inferSlotSide(m: BMatch, team: string): "home" | "away" | null {
-	const homeGroup = parseGroupLetter(m.homeLabel);
-	const awayGroup = parseGroupLetter(m.awayLabel);
-	if (homeGroup && (GROUPS[homeGroup] ?? []).includes(team)) return "home";
-	if (awayGroup && (GROUPS[awayGroup] ?? []).includes(team)) return "away";
-	if (m.homeLabel?.includes("3rd Place")) return "home";
-	if (m.awayLabel?.includes("3rd Place")) return "away";
-	return null;
-}
-
-// Slot fills aren't persisted (only the per-match winner is), so on load we
-// reconstruct the winning team's slot from saved picks — otherwise the R32 card
-// shows an empty label while its winner still flows into later rounds, leaving
-// nothing to clear.
-function buildInitialSlotPicks(
-	r32: BMatch[],
-	initialPicks: Record<string, string>,
-): Record<string, { home?: string; away?: string }> {
-	const slots: Record<string, { home?: string; away?: string }> = {};
-	for (const m of r32) {
-		const winner = initialPicks[m.id];
-		if (!winner || isLabel(winner)) continue;
-		const side = inferSlotSide(m, winner);
-		if (side) slots[m.id] = { [side]: winner };
-	}
-	return slots;
-}
-
 // Build team sections for the picker modal — kept pure so PickerModal stays simple.
 function buildGroupedSections(
 	state: PickerState,
@@ -596,6 +566,7 @@ export function BracketTree({
 	sf,
 	finalMatch,
 	initialPicks,
+	initialSlotPicks,
 	allTeams,
 	isLocked,
 }: Readonly<{
@@ -605,13 +576,15 @@ export function BracketTree({
 	sf: BMatch[];
 	finalMatch: BMatch | null;
 	initialPicks: Record<string, string>;
+	initialSlotPicks: Record<string, { home?: string; away?: string }>;
 	allTeams: string[];
 	isLocked: boolean;
 }>) {
 	const [picks, setPicks] = useState<Record<string, string>>(initialPicks);
-	const [slotPicks, setSlotPicks] = useState<
-		Record<string, { home?: string; away?: string }>
-	>(() => buildInitialSlotPicks(r32, initialPicks));
+	const [slotPicks, setSlotPicks] =
+		useState<Record<string, { home?: string; away?: string }>>(
+			initialSlotPicks,
+		);
 	const [dirty, setDirty] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [picker, setPicker] = useState<PickerState | null>(null);
@@ -722,7 +695,7 @@ export function BracketTree({
 	function handleSave() {
 		setError(null);
 		startTransition(async () => {
-			const res = await saveBracketPicks(picks);
+			const res = await saveBracketPicks(picks, slotPicks);
 			if (res.success) {
 				setDirty(false);
 			} else {
