@@ -53,8 +53,10 @@ export default async function BracketPage() {
 			<div className="flex flex-col gap-1">
 				<h1 className="text-2xl font-bold">Tournament Bracket</h1>
 				<p className="text-sm text-foreground-muted">
-					Predict who advances through each knockout round. Picks lock when the
-					first knockout match kicks off.
+					Predict each team's path through the knockout rounds. Earn points for
+					every round a team reaches — the exact path matters (group winner,
+					runner-up, or 3rd place). Picks lock when the first knockout match
+					kicks off.
 				</p>
 			</div>
 

@@ -58,14 +58,28 @@ export async function finaliseBracketMatch(
 		where: { matchId },
 	});
 
+	// Points are awarded when the predicted team REACHES a round, not only if they
+	// win it. Reaching a round means playing in it — i.e. the team is one of the
+	// two participants in this specific match slot. The group-position path must be
+	// exact: if a user predicted Germany for the "Group E Winner" slot but Germany
+	// came second, Germany won't be in that match and earns 0.
+	//
+	// The Final is special: reaching it (being either finalist) earns FINAL pts,
+	// and winning it earns an additional CHAMPION pts on top.
 	await Promise.all(
 		pickList.map((p) => {
-			let earned = p.predictedWinner === winner ? pts : 0;
-			// Final: both finalists earn FINAL pts; champion picker earns an extra CHAMPION pts.
+			let earned = 0;
 			if (match.stage === "FINAL") {
+				// Both finalists earn FINAL pts; champion earns an additional CHAMPION pts.
 				earned =
 					(STAGE_POINTS.FINAL ?? 0) +
 					(p.predictedWinner === winner ? (STAGE_POINTS.CHAMPION ?? 0) : 0);
+			} else {
+				// Earn pts for any pick whose team actually played in this match.
+				const reached =
+					p.predictedWinner === match.homeTeam ||
+					p.predictedWinner === match.awayTeam;
+				earned = reached ? pts : 0;
 			}
 			return prisma.bracketMatchPick.update({
 				where: { id: p.id },

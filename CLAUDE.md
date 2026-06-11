@@ -139,15 +139,19 @@ CRON_SECRET=              # bearer token guarding /api/cron/sync
 Calculated and written to `Prediction.points` when `finaliseMatch` is called.
 
 ### Bracket predictions — `STAGE_POINTS` in `src/lib/bracket.ts`
-Per knockout round a correctly-picked team survives (light-geometric curve):
+Points are earned when a predicted team **reaches** a round (plays in it), not only
+if they win it. The exact path matters: predicting a team as Group A Winner when they
+finish as runner-up scores 0 (they play in a different match slot).
 
 | Round | R32 | R16 | QF | SF | Finalist | Champion |
 |-------|----:|----:|---:|---:|---------:|---------:|
 | Pts   | 1   | 2   | 3  | 5  | 8        | +12      |
 
-The `FINAL` match is scored specially in `finaliseBracketMatch`: everyone who picked
-**either** finalist earns `FINAL` (8) pts, and whoever picked the actual winner earns an
-additional `CHAMPION` (12) pts. Written to `BracketMatchPick.points`.
+Scoring in `finaliseBracketMatch`: for non-Final matches, a pick earns `pts` if
+`predictedWinner ∈ {match.homeTeam, match.awayTeam}` (team reached this round).
+The `FINAL` is special: **both** finalist pickers earn `FINAL` (8) pts, and the
+champion picker earns an additional `CHAMPION` (12) pts. Written to
+`BracketMatchPick.points`.
 
 ## Styling Conventions
 
