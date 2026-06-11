@@ -28,14 +28,15 @@ export default async function BracketPage() {
 	const initialPicks: Record<string, string> = {};
 	for (const p of rawPicks) initialPicks[p.matchId] = p.predictedWinner;
 
-	// Lock state — bracket locks when the first match of the tournament starts.
+	// Lock state — bracket locks 24h after the first tournament match kicks off.
 	const firstMatch = await prisma.match.findFirst({
 		orderBy: { scheduledAt: "asc" },
 		select: { scheduledAt: true, status: true },
 	});
-	const isLocked =
-		!!firstMatch &&
-		(firstMatch.status !== "UPCOMING" || firstMatch.scheduledAt <= new Date());
+	const lockAt = firstMatch
+		? new Date(firstMatch.scheduledAt.getTime() + 24 * 60 * 60 * 1000)
+		: null;
+	const isLocked = !!lockAt && lockAt <= new Date();
 
 	// All WC teams from group stage
 	const groupMatches = await prisma.match.findMany({
@@ -59,8 +60,8 @@ export default async function BracketPage() {
 				<p className="text-sm text-foreground-muted">
 					Predict each team's path through the knockout rounds. Earn points for
 					every round a team reaches — the exact path matters (group winner,
-					runner-up, or eligible 3rd place per slot). Picks lock when the first
-					tournament match kicks off.
+					runner-up, or eligible 3rd place per slot). Picks lock 24 hours after
+					the first tournament match kicks off.
 				</p>
 			</div>
 
