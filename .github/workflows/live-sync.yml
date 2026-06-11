@@ -1,22 +1,16 @@
 name: Live match sync
 
-# Pings the deployed /api/cron/sync endpoint so match status + scores refresh
-# during games (the Vercel cron only runs once a day on Hobby plans).
+# Manually-triggerable ping of the deployed /api/cron/sync endpoint, kept as an
+# on-demand backup. The regular schedule is driven externally by cron-job.org,
+# which is far more punctual than GitHub Actions' best-effort scheduler.
 #
 # Required repository secrets (Settings → Secrets and variables → Actions):
 #   APP_URL      Base URL of the deployed app, e.g. https://your-app.vercel.app
 #   CRON_SECRET  Same value as the CRON_SECRET env var in Vercel
-#
-# Note on cadence: GitHub Actions cron is best-effort — runs are often delayed and
-# individual ticks can be dropped under load, so treat 15 min as "roughly every 15
-# minutes", not exact. Actions minutes are free/unlimited for public repos.
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"
   workflow_dispatch: {}
 
-# Don't let a slow run overlap with the next scheduled one.
 concurrency:
   group: live-sync
   cancel-in-progress: false
