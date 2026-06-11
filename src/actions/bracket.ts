@@ -10,10 +10,14 @@ export type BracketActionResult =
 	| { success: false; error: string };
 
 async function isBracketLocked(): Promise<boolean> {
-	const match = await prisma.match.findFirst({
-		where: { stage: { not: "GROUP" }, status: { not: "UPCOMING" } },
+	// Bracket locks when the first match of the tournament kicks off (not just
+	// the first knockout match), so picks can't be adjusted once any game starts.
+	const first = await prisma.match.findFirst({
+		orderBy: { scheduledAt: "asc" },
+		select: { scheduledAt: true, status: true },
 	});
-	return !!match;
+	if (!first) return false;
+	return first.status !== "UPCOMING" || first.scheduledAt <= new Date();
 }
 
 /** Upsert all bracket picks in one go (client sends full picks map). */

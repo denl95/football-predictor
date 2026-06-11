@@ -28,10 +28,14 @@ export default async function BracketPage() {
 	const initialPicks: Record<string, string> = {};
 	for (const p of rawPicks) initialPicks[p.matchId] = p.predictedWinner;
 
-	// Lock state
-	const lockedMatch = await prisma.match.findFirst({
-		where: { stage: { not: "GROUP" }, status: { not: "UPCOMING" } },
+	// Lock state — bracket locks when the first match of the tournament starts.
+	const firstMatch = await prisma.match.findFirst({
+		orderBy: { scheduledAt: "asc" },
+		select: { scheduledAt: true, status: true },
 	});
+	const isLocked =
+		!!firstMatch &&
+		(firstMatch.status !== "UPCOMING" || firstMatch.scheduledAt <= new Date());
 
 	// All WC teams from group stage
 	const groupMatches = await prisma.match.findMany({
@@ -105,7 +109,7 @@ export default async function BracketPage() {
 				finalMatch={finalMatch}
 				initialPicks={initialPicks}
 				allTeams={allTeams}
-				isLocked={!!lockedMatch}
+				isLocked={isLocked}
 			/>
 		</div>
 	);
