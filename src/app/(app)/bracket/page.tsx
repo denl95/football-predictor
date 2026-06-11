@@ -59,8 +59,8 @@ export default async function BracketPage() {
 				<p className="text-sm text-foreground-muted">
 					Predict each team's path through the knockout rounds. Earn points for
 					every round a team reaches — the exact path matters (group winner,
-					runner-up, or 3rd place). Picks lock when the first knockout match
-					kicks off.
+					runner-up, or eligible 3rd place per slot). Picks lock when the first
+					tournament match kicks off.
 				</p>
 			</div>
 
