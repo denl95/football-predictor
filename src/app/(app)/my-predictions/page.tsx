@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Flag } from "@/components/Flag";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { hasMatchStarted } from "@/lib/match-lock";
 
 export default async function MyPredictionsPage() {
 	const session = await auth();
@@ -75,6 +76,8 @@ export default async function MyPredictionsPage() {
 					<ul>
 						{predictions.map((p) => {
 							const isFinished = p.match.status === "FINISHED";
+							const hasStarted = hasMatchStarted(p.match);
+							const isLive = hasStarted && !isFinished;
 							return (
 								<li
 									key={p.id}
@@ -109,9 +112,16 @@ export default async function MyPredictionsPage() {
 												{p.homeScore} – {p.awayScore}
 											</span>
 
-											{isFinished && p.match.homeScore !== null && (
-												<span className="text-foreground-muted">
-													({p.match.homeScore} – {p.match.awayScore})
+											{hasStarted && p.match.homeScore !== null && (
+												<span
+													className={
+														isLive
+															? "font-semibold text-red-400"
+															: "text-foreground-muted"
+													}
+												>
+													{isLive ? "●" : ""}
+													{p.match.homeScore} – {p.match.awayScore}
 												</span>
 											)}
 
@@ -123,7 +133,7 @@ export default async function MyPredictionsPage() {
 												</span>
 											) : (
 												<span className="w-12 rounded-lg bg-surface-2 px-2 py-0.5 text-center text-xs text-foreground-muted">
-													{p.match.status === "UPCOMING" ? "–" : "TBD"}
+													{hasStarted ? "TBD" : "–"}
 												</span>
 											)}
 										</div>
