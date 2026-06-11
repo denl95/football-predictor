@@ -1,124 +1,8 @@
 import Link from "next/link";
-import { Flag } from "@/components/Flag";
-import { LocalDateTime } from "@/components/LocalDateTime";
-import type { Match, Prediction } from "@/generated/prisma/client";
+import type { SerializedMatch } from "@/components/MatchList";
+import { MatchList } from "@/components/MatchList";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-
-type MatchWithPrediction = Match & { prediction?: Prediction | null };
-
-const CARD_TIME_OPTIONS: Intl.DateTimeFormatOptions = {
-	day: "numeric",
-	month: "short",
-	hour: "2-digit",
-	minute: "2-digit",
-};
-
-function getStatusBadge(status: Match["status"]) {
-	if (status === "LIVE")
-		return (
-			<span className="flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-400">
-				<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
-				LIVE
-			</span>
-		);
-	if (status === "FINISHED")
-		return (
-			<span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-foreground-muted">
-				FT
-			</span>
-		);
-	return null;
-}
-
-function MatchCard({ match }: { match: MatchWithPrediction }) {
-	const pred = match.prediction;
-	const isFinished = match.status === "FINISHED";
-	const showScore =
-		(isFinished || match.status === "LIVE") &&
-		match.homeScore !== null &&
-		match.awayScore !== null;
-
-	return (
-		<Link
-			href={`/matches/${match.id}`}
-			className="group flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 transition-colors hover:border-accent/50 hover:bg-surface-2"
-		>
-			<div className="flex items-center justify-between text-xs text-foreground-muted">
-				<span>{match.group}</span>
-				<div className="flex items-center gap-2">
-					{getStatusBadge(match.status)}
-					<LocalDateTime
-						iso={match.scheduledAt.toISOString()}
-						fallback={match.scheduledAt.toLocaleString(
-							"en-GB",
-							CARD_TIME_OPTIONS,
-						)}
-						options={CARD_TIME_OPTIONS}
-					/>
-				</div>
-			</div>
-
-			<div className="flex items-center justify-between gap-4">
-				<div className="flex flex-1 items-center gap-2">
-					<Flag name={match.homeTeam} />
-					<span className="font-semibold">{match.homeTeam}</span>
-				</div>
-
-				<div className="flex flex-col items-center gap-1">
-					{showScore ? (
-						<div
-							className={`rounded-lg px-4 py-1 text-xl font-bold tabular-nums ${match.status === "LIVE" ? "bg-red-500/20 text-red-400" : "bg-surface-2"}`}
-						>
-							{match.homeScore} – {match.awayScore}
-						</div>
-					) : (
-						<div className="rounded-lg border border-border px-4 py-1 text-sm font-medium text-foreground-muted">
-							vs
-						</div>
-					)}
-				</div>
-
-				<div className="flex flex-1 items-center justify-end gap-2">
-					<span className="font-semibold">{match.awayTeam}</span>
-					<Flag name={match.awayTeam} />
-				</div>
-			</div>
-
-			{pred && (
-				<div className="flex items-center justify-between border-t border-border pt-2 text-xs">
-					<span className="text-foreground-muted">
-						Your prediction:{" "}
-						<span className="font-semibold text-foreground">
-							{pred.homeScore} – {pred.awayScore}
-						</span>
-					</span>
-					{pred.points !== null && pred.points !== undefined && (
-						<span
-							className={`font-bold ${pred.points === 3 ? "text-gold" : pred.points >= 1 ? "text-accent" : "text-red-400"}`}
-						>
-							{pred.points} pts
-						</span>
-					)}
-				</div>
-			)}
-
-			{!pred && match.status === "UPCOMING" && (
-				<div className="border-t border-border pt-2 text-xs text-accent">
-					+ Add prediction
-				</div>
-			)}
-		</Link>
-	);
-}
-
-function dayLabel(isoDate: string) {
-	return new Date(isoDate).toLocaleDateString("en-GB", {
-		weekday: "short",
-		day: "numeric",
-		month: "short",
-	});
-}
 
 export default async function MatchesPage({
 	searchParams,
@@ -139,26 +23,28 @@ export default async function MatchesPage({
 		},
 	});
 
-	const matchesWithPred: MatchWithPrediction[] = matches.map((m) => ({
-		...m,
-		prediction: Array.isArray(m.predictions)
-			? (m.predictions[0] ?? null)
-			: null,
+	const serialized: SerializedMatch[] = matches.map((m) => ({
+		id: m.id,
+		homeTeam: m.homeTeam,
+		awayTeam: m.awayTeam,
+		group: m.group,
+		stage: m.stage,
+		status: m.status,
+		scheduledAt: m.scheduledAt.toISOString(),
+		homeScore: m.homeScore ?? null,
+		awayScore: m.awayScore ?? null,
+		prediction:
+			Array.isArray(m.predictions) && m.predictions[0]
+				? {
+						homeScore: m.predictions[0].homeScore,
+						awayScore: m.predictions[0].awayScore,
+						points: m.predictions[0].points ?? null,
+					}
+				: null,
 	}));
 
-	const grouped = matchesWithPred.reduce<Record<string, MatchWithPrediction[]>>(
-		(acc, m) => {
-			const key = byDay
-				? m.scheduledAt.toISOString().slice(0, 10)
-				: (m.group ?? m.stage);
-			(acc[key] ??= []).push(m);
-			return acc;
-		},
-		{},
-	);
-
-	const predictedCount = matchesWithPred.filter((m) => m.prediction).length;
-	const totalUpcoming = matchesWithPred.filter(
+	const predictedCount = serialized.filter((m) => m.prediction).length;
+	const totalUpcoming = serialized.filter(
 		(m) => m.status === "UPCOMING",
 	).length;
 
@@ -192,18 +78,7 @@ export default async function MatchesPage({
 				))}
 			</div>
 
-			{Object.entries(grouped).map(([key, groupMatches]) => (
-				<section key={key} className="flex flex-col gap-3">
-					<h2 className="text-sm font-semibold uppercase tracking-widest text-foreground-muted">
-						{byDay ? dayLabel(key) : key}
-					</h2>
-					<div className="grid gap-3 sm:grid-cols-2">
-						{groupMatches.map((m) => (
-							<MatchCard key={m.id} match={m} />
-						))}
-					</div>
-				</section>
-			))}
+			<MatchList matches={serialized} byDay={byDay} />
 		</div>
 	);
 }
