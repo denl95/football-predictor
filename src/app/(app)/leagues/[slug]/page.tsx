@@ -41,6 +41,10 @@ export default async function LeaguePage({
 								where: { points: { not: null } },
 								select: { points: true },
 							},
+							bracketMatchPicks: {
+								where: { points: { not: null } },
+								select: { points: true },
+							},
 						},
 					},
 				},
@@ -55,12 +59,17 @@ export default async function LeaguePage({
 			id: user.id,
 			name: user.name ?? "Anonymous",
 			image: user.image,
-			totalPoints: user.predictions.reduce(
+			matchPoints: user.predictions.reduce(
+				(sum, p) => sum + (p.points ?? 0),
+				0,
+			),
+			bracketPoints: user.bracketMatchPicks.reduce(
 				(sum, p) => sum + (p.points ?? 0),
 				0,
 			),
 			predictionsScored: user.predictions.length,
 		}))
+		.map((p) => ({ ...p, totalPoints: p.matchPoints + p.bracketPoints }))
 		.sort(
 			(a, b) =>
 				b.totalPoints - a.totalPoints ||
@@ -167,6 +176,12 @@ export default async function LeaguePage({
 						{ranked.map((player, i) => {
 							const isCurrentUser = player.id === userId;
 							const canRemove = isCreator && player.id !== league.createdBy;
+							const rankColor =
+								i === 0
+									? "text-gold"
+									: i < 3
+										? "text-accent"
+										: "text-foreground";
 							return (
 								<li
 									key={player.id}
@@ -230,13 +245,20 @@ export default async function LeaguePage({
 											</div>
 										</div>
 
-										<div
-											className={`text-xl font-bold tabular-nums ${i === 0 ? "text-gold" : i < 3 ? "text-accent" : "text-foreground"}`}
-										>
-											{player.totalPoints}
-											<span className="ml-1 text-sm font-normal text-foreground-muted">
-												pts
-											</span>
+										<div className="flex flex-col items-end gap-0.5">
+											<div
+												className={`text-xl font-bold tabular-nums ${rankColor}`}
+											>
+												{player.totalPoints}
+												<span className="ml-1 text-sm font-normal text-foreground-muted">
+													pts
+												</span>
+											</div>
+											<div className="flex items-center gap-1.5 text-[11px] text-foreground-muted">
+												<span>{player.matchPoints} scores</span>
+												<span>·</span>
+												<span>{player.bracketPoints} bracket</span>
+											</div>
 										</div>
 									</Link>
 									{canRemove ? (
