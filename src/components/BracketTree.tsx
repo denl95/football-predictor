@@ -3,7 +3,12 @@
 import { useMemo, useState, useTransition } from "react";
 import { saveBracketPicks } from "@/actions/bracket";
 import { Flag } from "@/components/Flag";
-import { GROUPS, teamsForLabel } from "@/lib/bracket";
+import {
+	GROUPS,
+	STAGE_LABEL,
+	STAGE_POINTS,
+	teamsForLabel,
+} from "@/lib/bracket";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -803,11 +808,98 @@ export function BracketTree({
 		return set;
 	}, [slotPicks]);
 
+	// Column label data ordered left→right across the bracket.
+	const COLUMN_LABELS: {
+		key: string;
+		pts: number;
+		label: string;
+		champion?: boolean;
+	}[] = [
+		{
+			key: "r32-l",
+			pts: STAGE_POINTS.ROUND_OF_32,
+			label: STAGE_LABEL.ROUND_OF_32,
+		},
+		{
+			key: "r16-l",
+			pts: STAGE_POINTS.ROUND_OF_16,
+			label: STAGE_LABEL.ROUND_OF_16,
+		},
+		{
+			key: "qf-l",
+			pts: STAGE_POINTS.QUARTER_FINAL,
+			label: STAGE_LABEL.QUARTER_FINAL,
+		},
+		{
+			key: "sf-l",
+			pts: STAGE_POINTS.SEMI_FINAL,
+			label: STAGE_LABEL.SEMI_FINAL,
+		},
+		{
+			key: "final",
+			pts: STAGE_POINTS.FINAL,
+			label: STAGE_LABEL.FINAL,
+			champion: true,
+		},
+		{
+			key: "sf-r",
+			pts: STAGE_POINTS.SEMI_FINAL,
+			label: STAGE_LABEL.SEMI_FINAL,
+		},
+		{
+			key: "qf-r",
+			pts: STAGE_POINTS.QUARTER_FINAL,
+			label: STAGE_LABEL.QUARTER_FINAL,
+		},
+		{
+			key: "r16-r",
+			pts: STAGE_POINTS.ROUND_OF_16,
+			label: STAGE_LABEL.ROUND_OF_16,
+		},
+		{
+			key: "r32-r",
+			pts: STAGE_POINTS.ROUND_OF_32,
+			label: STAGE_LABEL.ROUND_OF_32,
+		},
+	];
+
 	return (
 		<div className="flex flex-col gap-4 [--bk-card:152px] [--bk-conn:14px] [--bk-unit:84px] md:[--bk-card:168px] md:[--bk-conn:16px] md:[--bk-unit:96px] lg:[--bk-card:190px] lg:[--bk-conn:18px] lg:[--bk-unit:110px] xl:[--bk-card:212px] xl:[--bk-conn:20px] xl:[--bk-unit:124px] 2xl:[--bk-card:236px] 2xl:[--bk-conn:24px] 2xl:[--bk-unit:140px]">
 			{/* Break out of the centred max-w-6xl container on wide screens so the
 			    larger bracket has room to breathe before it needs to scroll. */}
 			<div className="overflow-x-auto pb-4 xl:ml-[calc(50%-50vw)] xl:mr-[calc(50%-50vw)] xl:w-screen xl:px-8">
+				{/* Column headers — aligned to bracket columns using the same CSS vars */}
+				<div className="mb-2 flex" style={{ minWidth: "max-content" }}>
+					{COLUMN_LABELS.map((col, i) => (
+						<div key={col.key} className="flex">
+							<div
+								className="flex flex-col items-center gap-0.5 text-center"
+								style={{ width: CARD_W }}
+							>
+								<span className="text-[10px] font-semibold uppercase tracking-widest text-foreground-muted lg:text-xs">
+									{col.label}
+								</span>
+								{col.champion ? (
+									<span className="text-[10px] font-semibold text-gold lg:text-xs">
+										+{col.pts}pts
+										<span className="text-foreground-muted">
+											{" "}
+											+{STAGE_POINTS.CHAMPION} champion
+										</span>
+									</span>
+								) : (
+									<span className="text-[10px] font-semibold text-accent lg:text-xs">
+										+{col.pts}pts
+									</span>
+								)}
+							</div>
+							{/* connector spacer — mirrors the connectors in the bracket row */}
+							{i < COLUMN_LABELS.length - 1 ? (
+								<div style={{ width: CONN_W }} />
+							) : null}
+						</div>
+					))}
+				</div>
 				<div className="flex items-start" style={{ minWidth: "max-content" }}>
 					<BracketColumn
 						cards={leftR32}
