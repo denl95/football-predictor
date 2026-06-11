@@ -76,8 +76,10 @@ export default async function MatchPage({
 
 		for (const league of myLeagues) {
 			const memberIds = league.members.map((m) => m.userId);
+			// Exclude the current user — their prediction is shown separately above.
+			const otherMemberIds = memberIds.filter((mid) => mid !== session.user.id);
 			const preds = await prisma.prediction.findMany({
-				where: { matchId: id, userId: { in: memberIds } },
+				where: { matchId: id, userId: { in: otherMemberIds } },
 				include: { user: { select: { id: true, name: true, image: true } } },
 				orderBy: [
 					{ points: { sort: "desc", nulls: "last" } },
@@ -167,8 +169,8 @@ export default async function MatchPage({
 				</div>
 			)}
 
-			{/* Own result when finished */}
-			{isFinished && prediction && (
+			{/* Own prediction — shown once here once match starts, excluded from league lists */}
+			{hasStarted && prediction && (
 				<div className="rounded-2xl border border-border bg-surface p-6">
 					<h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-foreground-muted">
 						Your prediction
@@ -177,12 +179,22 @@ export default async function MatchPage({
 						<span className="text-xl font-bold tabular-nums">
 							{prediction.homeScore} – {prediction.awayScore}
 						</span>
-						{prediction.points !== null && (
-							<span
-								className={`text-lg font-bold ${prediction.points === 3 ? "text-gold" : prediction.points >= 1 ? "text-accent" : "text-red-400"}`}
-							>
-								{prediction.points} pt{prediction.points !== 1 ? "s" : ""}
-							</span>
+						{prediction.points === null ? (
+							<span className="text-sm text-foreground-muted">pending</span>
+						) : (
+							(() => {
+								const ptColor =
+									prediction.points === 3
+										? "text-gold"
+										: prediction.points >= 1
+											? "text-accent"
+											: "text-red-400";
+								return (
+									<span className={`text-lg font-bold ${ptColor}`}>
+										{prediction.points} pt{prediction.points === 1 ? "" : "s"}
+									</span>
+								);
+							})()
 						)}
 					</div>
 				</div>
