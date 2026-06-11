@@ -44,18 +44,23 @@ function localDayKey(iso: string): string {
 	return `${y}-${m}-${day}`;
 }
 
-function getStatusBadge(status: SerializedMatch["status"]) {
-	if (status === "LIVE")
-		return (
-			<span className="flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-400">
-				<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
-				LIVE
-			</span>
-		);
+function getStatusBadge(
+	status: SerializedMatch["status"],
+	hasStarted: boolean,
+) {
 	if (status === "FINISHED")
 		return (
 			<span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-foreground-muted">
 				FT
+			</span>
+		);
+	// Show LIVE when the DB says LIVE, or when scheduled time has passed but the
+	// cron hasn't updated status yet (cron runs every ~15 min).
+	if (status === "LIVE" || hasStarted)
+		return (
+			<span className="flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-400">
+				<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
+				LIVE
 			</span>
 		);
 	return null;
@@ -64,8 +69,13 @@ function getStatusBadge(status: SerializedMatch["status"]) {
 function MatchCard({ match }: { match: SerializedMatch }) {
 	const pred = match.prediction;
 	const isFinished = match.status === "FINISHED";
+	// Time-based started check so the card updates once kickoff passes,
+	// even if the cron hasn't flipped the status yet.
+	const hasStarted =
+		match.status !== "UPCOMING" || new Date(match.scheduledAt) <= new Date();
+	const isLive = hasStarted && match.status !== "FINISHED";
 	const showScore =
-		(isFinished || match.status === "LIVE") &&
+		(isFinished || hasStarted) &&
 		match.homeScore !== null &&
 		match.awayScore !== null;
 
@@ -77,7 +87,7 @@ function MatchCard({ match }: { match: SerializedMatch }) {
 			<div className="flex items-center justify-between text-xs text-foreground-muted">
 				<span>{match.group}</span>
 				<div className="flex items-center gap-2">
-					{getStatusBadge(match.status)}
+					{getStatusBadge(match.status, hasStarted)}
 					<LocalDateTime
 						iso={match.scheduledAt}
 						fallback={new Date(match.scheduledAt).toLocaleString(
@@ -98,7 +108,7 @@ function MatchCard({ match }: { match: SerializedMatch }) {
 				<div className="flex flex-col items-center gap-1">
 					{showScore ? (
 						<div
-							className={`rounded-lg px-4 py-1 text-xl font-bold tabular-nums ${match.status === "LIVE" ? "bg-red-500/20 text-red-400" : "bg-surface-2"}`}
+							className={`rounded-lg px-4 py-1 text-xl font-bold tabular-nums ${isLive ? "bg-red-500/20 text-red-400" : "bg-surface-2"}`}
 						>
 							{match.homeScore} – {match.awayScore}
 						</div>

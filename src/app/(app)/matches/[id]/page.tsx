@@ -37,39 +37,69 @@ export default async function MatchPage({
 
 	const isFinished = match.status === "FINISHED";
 	const hasStarted = hasMatchStarted(match);
+	const isLive = hasStarted && match.status !== "FINISHED";
 	const canPredict = !hasStarted;
 	const showScore =
-		(isFinished || match.status === "LIVE") &&
+		(isFinished || hasStarted) &&
 		match.homeScore !== null &&
 		match.awayScore !== null;
 
-	// Once a match has kicked off, predictions are locked, so it's safe to reveal
-	// everyone's picks (limited to leagues the viewer shares). Points only exist
-	// after the match is finalised.
-	const allPredictions =
-		hasStarted && session?.user?.id
-			? await prisma.prediction.findMany({
-					where: {
-						matchId: id,
-						user: {
-							leagueMemberships: {
-								some: {
-									league: {
-										members: { some: { userId: session.user.id } },
-									},
-								},
-							},
-						},
-					},
-					include: {
-						user: { select: { id: true, name: true, image: true } },
-					},
-					orderBy: [
-						{ points: { sort: "desc", nulls: "last" } },
-						{ createdAt: "asc" },
-					],
-				})
-			: [];
+	// Once a match has kicked off, fetch predictions grouped by shared league.
+	// We load the viewer's leagues, then for each league load its members'
+	// predictions for this match.
+	type LeaguePrediction = {
+		userId: string;
+		name: string;
+		image: string | null;
+		homeScore: number;
+		awayScore: number;
+		points: number | null;
+	};
+	type LeagueGroup = {
+		leagueId: string;
+		leagueName: string;
+		predictions: LeaguePrediction[];
+	};
+
+	const leagueGroups: LeagueGroup[] = [];
+
+	if (hasStarted && session?.user?.id) {
+		const myLeagues = await prisma.league.findMany({
+			where: { members: { some: { userId: session.user.id } } },
+			select: {
+				id: true,
+				name: true,
+				members: { select: { userId: true } },
+			},
+			orderBy: { name: "asc" },
+		});
+
+		for (const league of myLeagues) {
+			const memberIds = league.members.map((m) => m.userId);
+			const preds = await prisma.prediction.findMany({
+				where: { matchId: id, userId: { in: memberIds } },
+				include: { user: { select: { id: true, name: true, image: true } } },
+				orderBy: [
+					{ points: { sort: "desc", nulls: "last" } },
+					{ createdAt: "asc" },
+				],
+			});
+			if (preds.length > 0) {
+				leagueGroups.push({
+					leagueId: league.id,
+					leagueName: league.name,
+					predictions: preds.map((p) => ({
+						userId: p.user.id,
+						name: p.user.name ?? "Anonymous",
+						image: p.user.image,
+						homeScore: p.homeScore,
+						awayScore: p.awayScore,
+						points: p.points,
+					})),
+				});
+			}
+		}
+	}
 
 	return (
 		<div className="mx-auto flex max-w-xl flex-col gap-6">
@@ -99,7 +129,7 @@ export default async function MatchPage({
 					<div className="flex flex-col items-center gap-1">
 						{showScore ? (
 							<div
-								className={`rounded-xl px-6 py-2 text-3xl font-bold tabular-nums ${match.status === "LIVE" ? "bg-red-500/20 text-red-400" : "bg-surface-2"}`}
+								className={`rounded-xl px-6 py-2 text-3xl font-bold tabular-nums ${isLive ? "bg-red-500/20 text-red-400" : "bg-surface-2"}`}
 							>
 								{match.homeScore} – {match.awayScore}
 							</div>
@@ -108,7 +138,7 @@ export default async function MatchPage({
 								vs
 							</div>
 						)}
-						{match.status === "LIVE" && (
+						{isLive && (
 							<span className="text-xs font-semibold text-red-400">● LIVE</span>
 						)}
 					</div>
@@ -158,37 +188,40 @@ export default async function MatchPage({
 				</div>
 			)}
 
-			{/* Leaderboard for this match */}
-			{allPredictions.length > 0 && (
-				<div className="overflow-hidden rounded-2xl border border-border bg-surface">
+			{/* Predictions grouped by league */}
+			{leagueGroups.map(({ leagueId, leagueName, predictions }) => (
+				<div
+					key={leagueId}
+					className="overflow-hidden rounded-2xl border border-border bg-surface"
+				>
 					<div className="border-b border-border px-5 py-3">
 						<h2 className="text-sm font-semibold uppercase tracking-widest text-foreground-muted">
-							League predictions
+							{leagueName}
 						</h2>
 					</div>
 					<ul>
-						{allPredictions.map((p) => {
-							const isCurrentUser = p.user.id === session?.user?.id;
+						{predictions.map((p) => {
+							const isCurrentUser = p.userId === session?.user?.id;
 							return (
 								<li
-									key={p.id}
+									key={p.userId}
 									className={`flex items-center gap-3 border-b border-border px-5 py-3 last:border-b-0 ${isCurrentUser ? "bg-accent/10" : ""}`}
 								>
-									{p.user.image ? (
+									{p.image ? (
 										<Image
-											src={p.user.image}
-											alt={p.user.name ?? ""}
+											src={p.image}
+											alt={p.name}
 											width={32}
 											height={32}
 											className="rounded-full"
 										/>
 									) : (
 										<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
-											{(p.user.name ?? "?")[0]?.toUpperCase()}
+											{p.name[0]?.toUpperCase()}
 										</div>
 									)}
-									<span className="flex-1 font-semibold text-sm">
-										{p.user.name ?? "Anonymous"}
+									<span className="flex-1 text-sm font-semibold">
+										{p.name}
 										{isCurrentUser && (
 											<span className="ml-2 rounded-full bg-accent/20 px-2 py-0.5 text-xs text-accent">
 												you
@@ -210,7 +243,7 @@ export default async function MatchPage({
 						})}
 					</ul>
 				</div>
-			)}
+			))}
 		</div>
 	);
 }
