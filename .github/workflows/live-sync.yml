@@ -4,6 +4,12 @@ name: Live match sync
 # on-demand backup. The regular schedule is driven externally by cron-job.org,
 # which is far more punctual than GitHub Actions' best-effort scheduler.
 #
+# cron-job.org setup (time-restricted to match hours):
+#   URL:      https://<your-domain>/api/cron/sync
+#   Header:   Authorization: Bearer <CRON_SECRET>
+#   Schedule: every 15 min, hours 17-23 and 0-4 UTC
+#             (17:00-05:00 UTC = 20:00-08:00 EEST)
+#
 # Required repository secrets (Settings → Secrets and variables → Actions):
 #   APP_URL      Base URL of the deployed app, e.g. https://your-app.vercel.app
 #   CRON_SECRET  Same value as the CRON_SECRET env var in Vercel
