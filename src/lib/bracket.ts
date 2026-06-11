@@ -32,10 +32,14 @@ export const GROUPS: Record<string, string[]> = {
 	L: ["England", "Croatia", "Ghana", "Panama"],
 };
 
-/** "Group A Winner" | "Group C Runner-up" → 4 teams from that group.
- *  "Best 3rd Place" → all teams across all groups. */
+/** Returns the candidate teams for a bracket slot label:
+ *  "Group A Winner" | "Group C Runner-up" → 4 teams from that group.
+ *  "Best 3rd Place (ABCDF)" → teams from those specific groups only.
+ *  "Best 3rd Place" (legacy) → all teams. */
 export function teamsForLabel(label: string | null | undefined): string[] {
 	if (!label) return [];
+	const third = /^Best 3rd Place \(([A-L]+)\)$/.exec(label);
+	if (third) return [...third[1]].flatMap((l) => GROUPS[l] ?? []);
 	if (label === "Best 3rd Place") return Object.values(GROUPS).flat();
 	const m = /^Group ([A-L]) (?:Winner|Runner-up)$/.exec(label);
 	if (m) return GROUPS[m[1]] ?? [];

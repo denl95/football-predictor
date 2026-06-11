@@ -61,6 +61,13 @@ function effectiveTeam(dbTeam: string, label: string | null): string {
 	return dbTeam !== "TBD" ? dbTeam : (label ?? "TBD");
 }
 
+/** Condense "Best 3rd Place (ABCDF)" → "Best 3rd (A/B/C/D/F)" for the card UI. */
+function displayLabel(label: string): string {
+	const m = /^Best 3rd Place \(([A-L]+)\)$/.exec(label);
+	if (!m) return label;
+	return `Best 3rd (${[...m[1]].join("/")})`;
+}
+
 function isLabel(s: string): boolean {
 	return (
 		s === "TBD" ||
@@ -97,8 +104,8 @@ function inferSlotSide(m: BMatch, team: string): "home" | "away" | null {
 	const awayGroup = parseGroupLetter(m.awayLabel);
 	if (homeGroup && (GROUPS[homeGroup] ?? []).includes(team)) return "home";
 	if (awayGroup && (GROUPS[awayGroup] ?? []).includes(team)) return "away";
-	if (m.homeLabel === "Best 3rd Place") return "home";
-	if (m.awayLabel === "Best 3rd Place") return "away";
+	if (m.homeLabel?.includes("3rd Place")) return "home";
+	if (m.awayLabel?.includes("3rd Place")) return "away";
 	return null;
 }
 
@@ -296,9 +303,9 @@ function PickerModal({
 					<div>
 						<p className="text-xs text-foreground-muted">Pick winner</p>
 						<p className="text-sm font-semibold">
-							{state.homeDisplay}{" "}
+							{displayLabel(state.homeDisplay)}{" "}
 							<span className="font-normal text-foreground-muted">vs</span>{" "}
-							{state.awayDisplay}
+							{displayLabel(state.awayDisplay)}
 						</p>
 					</div>
 					{currentPick ? (
@@ -399,7 +406,7 @@ function BracketCard({
 						className={`flex items-center gap-1.5 px-2 py-1.5 text-xs lg:text-sm ${isWinner ? "bg-accent/20 font-semibold text-accent" : "text-foreground-muted"}`}
 					>
 						{filled ? <Flag name={label} /> : null}
-						<span className="flex-1 truncate">{label}</span>
+						<span className="flex-1 truncate">{displayLabel(label)}</span>
 						{isWinner ? <span className="shrink-0 text-accent">✓</span> : null}
 					</div>
 				);
@@ -412,7 +419,7 @@ function BracketCard({
 						onClick={() => openPicker(side)}
 						className="flex w-full items-start px-2 py-1.5 text-left text-xs text-foreground-muted transition-colors hover:bg-surface-2 lg:text-sm"
 					>
-						{label}
+						{displayLabel(label)}
 					</button>
 				);
 			}
