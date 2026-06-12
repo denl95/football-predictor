@@ -10,7 +10,8 @@ export default async function MatchesPage({
 	searchParams: Promise<{ view?: string }>;
 }) {
 	const { view } = await searchParams;
-	const byDay = view !== "group";
+	const isResults = view === "results";
+	const byDay = view !== "group" && !isResults;
 
 	const session = await auth();
 
@@ -48,8 +49,13 @@ export default async function MatchesPage({
 	const totalUpcoming = upcomingOnly.length;
 
 	const tabs = [
-		{ label: "By Day", href: "/matches", active: byDay },
-		{ label: "By Group", href: "/matches?view=group", active: !byDay },
+		{ label: "By Day", href: "/matches", active: !view || view === "day" },
+		{
+			label: "By Group",
+			href: "/matches?view=group",
+			active: view === "group",
+		},
+		{ label: "Results", href: "/matches?view=results", active: isResults },
 	];
 
 	return (
@@ -77,7 +83,7 @@ export default async function MatchesPage({
 				))}
 			</div>
 
-			<MatchList matches={serialized} byDay={byDay} />
+			<MatchList matches={serialized} byDay={byDay} isResults={isResults} />
 		</div>
 	);
 }

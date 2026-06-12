@@ -193,58 +193,41 @@ function GroupedSection({
 export function MatchList({
 	matches,
 	byDay,
-}: Readonly<{ matches: SerializedMatch[]; byDay: boolean }>) {
-	const { live, upcoming, finished } = useMemo(() => {
-		const now = new Date();
-		const liveMatches: SerializedMatch[] = [];
-		const upcomingMatches: SerializedMatch[] = [];
-		const finishedMatches: SerializedMatch[] = [];
-		for (const m of matches) {
-			if (m.status === "FINISHED") {
-				finishedMatches.push(m);
-			} else if (m.status === "LIVE" || new Date(m.scheduledAt) <= now) {
-				liveMatches.push(m);
-			} else {
-				upcomingMatches.push(m);
-			}
-		}
-		return {
-			live: liveMatches,
-			upcoming: upcomingMatches,
-			finished: finishedMatches,
-		};
-	}, [matches]);
+	isResults = false,
+}: Readonly<{
+	matches: SerializedMatch[];
+	byDay: boolean;
+	isResults?: boolean;
+}>) {
+	// Results view: server already filtered+sorted descending; group by local day.
+	// Default view: show upcoming+live only (finished removed), grouped by day/group.
+	const filtered = useMemo(() => {
+		if (isResults) return matches.filter((m) => m.status === "FINISHED");
+		return matches.filter((m) => m.status !== "FINISHED");
+	}, [matches, isResults]);
+
+	const grouped = useMemo(
+		() => groupByKey(filtered, byDay || isResults),
+		[filtered, byDay, isResults],
+	);
+
+	if (isResults) {
+		return (
+			<div className="flex flex-col gap-6">
+				{grouped.size === 0 ? (
+					<p className="text-sm text-foreground-muted">
+						No finished matches yet.
+					</p>
+				) : (
+					<GroupedSection grouped={grouped} byDay />
+				)}
+			</div>
+		);
+	}
 
 	return (
-		<div className="flex flex-col gap-8">
-			{live.length > 0 && (
-				<div className="flex flex-col gap-3">
-					<h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-red-400">
-						<span className="h-2 w-2 animate-pulse rounded-full bg-red-400" />
-						<span>Live</span>
-					</h2>
-					<div className="grid gap-3 sm:grid-cols-2">
-						{live.map((m) => (
-							<MatchCard key={m.id} match={m} />
-						))}
-					</div>
-				</div>
-			)}
-
-			{upcoming.length > 0 && (
-				<div className="flex flex-col gap-6">
-					<GroupedSection grouped={groupByKey(upcoming, byDay)} byDay={byDay} />
-				</div>
-			)}
-
-			{finished.length > 0 && (
-				<div className="flex flex-col gap-6">
-					<h2 className="text-sm font-semibold uppercase tracking-widest text-foreground-muted">
-						Finished
-					</h2>
-					<GroupedSection grouped={groupByKey(finished, byDay)} byDay={byDay} />
-				</div>
-			)}
+		<div className="flex flex-col gap-6">
+			<GroupedSection grouped={grouped} byDay={byDay} />
 		</div>
 	);
 }
