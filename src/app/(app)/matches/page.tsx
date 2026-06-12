@@ -43,10 +43,9 @@ export default async function MatchesPage({
 				: null,
 	}));
 
-	const predictedCount = serialized.filter((m) => m.prediction).length;
-	const totalUpcoming = serialized.filter(
-		(m) => m.status === "UPCOMING",
-	).length;
+	const upcomingOnly = serialized.filter((m) => m.status === "UPCOMING");
+	const predictedCount = upcomingOnly.filter((m) => m.prediction).length;
+	const totalUpcoming = upcomingOnly.length;
 
 	const tabs = [
 		{ label: "By Day", href: "/matches", active: byDay },

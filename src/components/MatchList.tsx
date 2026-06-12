@@ -152,21 +152,24 @@ function MatchCard({ match }: { match: SerializedMatch }) {
 	);
 }
 
-export function MatchList({
-	matches,
-	byDay,
-}: Readonly<{ matches: SerializedMatch[]; byDay: boolean }>) {
-	const grouped = useMemo(() => {
-		const map = new Map<string, SerializedMatch[]>();
-		for (const m of matches) {
-			const key = byDay ? localDayKey(m.scheduledAt) : (m.group ?? m.stage);
-			const bucket = map.get(key);
-			if (bucket) bucket.push(m);
-			else map.set(key, [m]);
-		}
-		return map;
-	}, [matches, byDay]);
+function groupByKey(
+	matches: SerializedMatch[],
+	byDay: boolean,
+): Map<string, SerializedMatch[]> {
+	const map = new Map<string, SerializedMatch[]>();
+	for (const m of matches) {
+		const key = byDay ? localDayKey(m.scheduledAt) : (m.group ?? m.stage);
+		const bucket = map.get(key);
+		if (bucket) bucket.push(m);
+		else map.set(key, [m]);
+	}
+	return map;
+}
 
+function GroupedSection({
+	grouped,
+	byDay,
+}: Readonly<{ grouped: Map<string, SerializedMatch[]>; byDay: boolean }>) {
 	return (
 		<>
 			{Array.from(grouped.entries()).map(([key, group]) => (
@@ -184,5 +187,64 @@ export function MatchList({
 				</section>
 			))}
 		</>
+	);
+}
+
+export function MatchList({
+	matches,
+	byDay,
+}: Readonly<{ matches: SerializedMatch[]; byDay: boolean }>) {
+	const { live, upcoming, finished } = useMemo(() => {
+		const now = new Date();
+		const liveMatches: SerializedMatch[] = [];
+		const upcomingMatches: SerializedMatch[] = [];
+		const finishedMatches: SerializedMatch[] = [];
+		for (const m of matches) {
+			if (m.status === "FINISHED") {
+				finishedMatches.push(m);
+			} else if (m.status === "LIVE" || new Date(m.scheduledAt) <= now) {
+				liveMatches.push(m);
+			} else {
+				upcomingMatches.push(m);
+			}
+		}
+		return {
+			live: liveMatches,
+			upcoming: upcomingMatches,
+			finished: finishedMatches,
+		};
+	}, [matches]);
+
+	return (
+		<div className="flex flex-col gap-8">
+			{live.length > 0 && (
+				<div className="flex flex-col gap-3">
+					<h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-red-400">
+						<span className="h-2 w-2 animate-pulse rounded-full bg-red-400" />
+						<span>Live</span>
+					</h2>
+					<div className="grid gap-3 sm:grid-cols-2">
+						{live.map((m) => (
+							<MatchCard key={m.id} match={m} />
+						))}
+					</div>
+				</div>
+			)}
+
+			{upcoming.length > 0 && (
+				<div className="flex flex-col gap-6">
+					<GroupedSection grouped={groupByKey(upcoming, byDay)} byDay={byDay} />
+				</div>
+			)}
+
+			{finished.length > 0 && (
+				<div className="flex flex-col gap-6">
+					<h2 className="text-sm font-semibold uppercase tracking-widest text-foreground-muted">
+						Finished
+					</h2>
+					<GroupedSection grouped={groupByKey(finished, byDay)} byDay={byDay} />
+				</div>
+			)}
+		</div>
 	);
 }
