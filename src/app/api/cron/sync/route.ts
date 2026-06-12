@@ -89,8 +89,16 @@ export async function GET(request: NextRequest) {
 			continue;
 		}
 
-		// Already in DB — skip if already finished (don't overwrite admin corrections)
-		if (existing.status === "FINISHED") continue;
+		// Skip only if already finished AND scores are recorded — this prevents
+		// overwriting admin corrections. If status is FINISHED but scores are null
+		// (football-data briefly returned FINISHED before populating fullTime), we
+		// still need to write the scores and award points.
+		if (
+			existing.status === "FINISHED" &&
+			existing.homeScore !== null &&
+			existing.awayScore !== null
+		)
+			continue;
 
 		const wasFinished = newStatus === "FINISHED";
 
