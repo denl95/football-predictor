@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect } from "react";
 import { type PredictionState, upsertPrediction } from "@/actions/predictions";
 
 interface Props {
@@ -10,10 +11,16 @@ interface Props {
 }
 
 export function PredictionForm({ matchId, initialHome, initialAway }: Props) {
+	const router = useRouter();
 	const [state, action, isPending] = useActionState<
 		PredictionState | null,
 		FormData
 	>(upsertPrediction, null);
+
+	// On a successful save, return to the match list.
+	useEffect(() => {
+		if (state?.success) router.push("/matches");
+	}, [state, router]);
 
 	return (
 		<form action={action} className="flex flex-col gap-4">
