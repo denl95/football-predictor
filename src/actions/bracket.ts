@@ -9,19 +9,22 @@ export type BracketActionResult =
 	| { success: true }
 	| { success: false; error: string };
 
-// Hours after the first scheduled match that the bracket locks.
-const LOCK_OFFSET_HOURS = 24;
-
-async function isBracketLocked(): Promise<boolean> {
-	const first = await prisma.match.findFirst({
+/** The bracket stays editable until the first knockout match (Round of 32)
+ *  kicks off — group results are still settling throughout the group stage,
+ *  so picks can be revised right up to the knockout phase. Returns null when
+ *  no Round of 32 match is scheduled yet (bracket never locks). */
+export async function getBracketLockAt(): Promise<Date | null> {
+	const firstKnockout = await prisma.match.findFirst({
+		where: { stage: "ROUND_OF_32" },
 		orderBy: { scheduledAt: "asc" },
 		select: { scheduledAt: true },
 	});
-	if (!first) return false;
-	const lockAt = new Date(
-		first.scheduledAt.getTime() + LOCK_OFFSET_HOURS * 60 * 60 * 1000,
-	);
-	return lockAt <= new Date();
+	return firstKnockout?.scheduledAt ?? null;
+}
+
+async function isBracketLocked(): Promise<boolean> {
+	const lockAt = await getBracketLockAt();
+	return !!lockAt && lockAt <= new Date();
 }
 
 /** Upsert all bracket picks in one go (client sends full picks + R32 slot fills). */

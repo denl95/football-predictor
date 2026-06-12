@@ -973,7 +973,7 @@ export function BracketTree({
 			<div className="flex items-center gap-3">
 				{isLocked ? (
 					<p className="text-sm text-foreground-muted">
-						Bracket is locked — picks closed 24h after kickoff
+						Bracket is locked — picks closed when the knockout stage began
 					</p>
 				) : (
 					<>

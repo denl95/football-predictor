@@ -1,3 +1,4 @@
+import { getBracketLockAt } from "@/actions/bracket";
 import { BracketTree } from "@/components/BracketTree";
 import { auth } from "@/lib/auth";
 import { STAGE_LABEL, STAGE_POINTS } from "@/lib/bracket";
@@ -37,16 +38,9 @@ export default async function BracketPage() {
 		}
 	}
 
-	// Bracket locks 24h after the first scheduled match kicks off (purely
-	// time-based — no status check so a quick first-match result doesn't
-	// close the window early).
-	const firstMatch = await prisma.match.findFirst({
-		orderBy: { scheduledAt: "asc" },
-		select: { scheduledAt: true },
-	});
-	const lockAt = firstMatch
-		? new Date(firstMatch.scheduledAt.getTime() + 24 * 60 * 60 * 1000)
-		: null;
+	// Bracket locks when the first knockout match (Round of 32) kicks off —
+	// picks stay editable throughout the group stage as results settle.
+	const lockAt = await getBracketLockAt();
 	const isLocked = !!lockAt && lockAt <= new Date();
 
 	// All WC teams from group stage
