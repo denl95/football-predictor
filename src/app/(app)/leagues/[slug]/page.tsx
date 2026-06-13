@@ -1,5 +1,4 @@
 import { headers } from "next/headers";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/CopyButton";
@@ -36,7 +35,6 @@ export default async function LeaguePage({
 						select: {
 							id: true,
 							name: true,
-							image: true,
 							predictions: {
 								where: { points: { not: null } },
 								select: { points: true },
@@ -58,7 +56,6 @@ export default async function LeaguePage({
 		.map(({ user }) => ({
 			id: user.id,
 			name: user.name ?? "Anonymous",
-			image: user.image,
 			matchPoints: user.predictions.reduce(
 				(sum, p) => sum + (p.points ?? 0),
 				0,
@@ -203,19 +200,9 @@ export default async function LeaguePage({
 											)}
 										</span>
 
-										{player.image ? (
-											<Image
-												src={player.image}
-												alt={player.name}
-												width={36}
-												height={36}
-												className="rounded-full"
-											/>
-										) : (
-											<div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
-												{player.name[0]?.toUpperCase()}
-											</div>
-										)}
+										<div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
+											{player.name[0]?.toUpperCase()}
+										</div>
 
 										<div className="flex-1">
 											<div className="flex items-center gap-2 font-semibold">

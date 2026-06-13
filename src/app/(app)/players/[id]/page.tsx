@@ -19,7 +19,7 @@ export default async function PlayerPage({
 	const [opponent, allMatches] = await Promise.all([
 		prisma.user.findUnique({
 			where: { id: opponentId },
-			select: { id: true, name: true, image: true },
+			select: { id: true, name: true },
 		}),
 		prisma.match.findMany({
 			orderBy: { scheduledAt: "asc" },
@@ -119,19 +119,9 @@ export default async function PlayerPage({
 
 				{/* Opponent */}
 				<div className="flex flex-col items-center gap-2">
-					{opponent.image ? (
-						<Image
-							src={opponent.image}
-							alt={opponent.name ?? ""}
-							width={48}
-							height={48}
-							className="rounded-full"
-						/>
-					) : (
-						<div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2 font-bold">
-							{(opponent.name ?? "?")[0]?.toUpperCase()}
-						</div>
-					)}
+					<div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-2 font-bold">
+						{(opponent.name ?? "?")[0]?.toUpperCase()}
+					</div>
 					<span className="max-w-[100px] truncate text-sm font-semibold">
 						{opponent.name ?? "Anonymous"}
 					</span>

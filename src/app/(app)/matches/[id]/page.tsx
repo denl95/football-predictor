@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Flag } from "@/components/Flag";
@@ -50,7 +49,6 @@ export default async function MatchPage({
 	type LeaguePrediction = {
 		userId: string;
 		name: string;
-		image: string | null;
 		homeScore: number;
 		awayScore: number;
 		points: number | null;
@@ -80,7 +78,7 @@ export default async function MatchPage({
 			const otherMemberIds = memberIds.filter((mid) => mid !== session.user.id);
 			const preds = await prisma.prediction.findMany({
 				where: { matchId: id, userId: { in: otherMemberIds } },
-				include: { user: { select: { id: true, name: true, image: true } } },
+				include: { user: { select: { id: true, name: true } } },
 				orderBy: [
 					{ points: { sort: "desc", nulls: "last" } },
 					{ createdAt: "asc" },
@@ -93,7 +91,6 @@ export default async function MatchPage({
 					predictions: preds.map((p) => ({
 						userId: p.user.id,
 						name: p.user.name ?? "Anonymous",
-						image: p.user.image,
 						homeScore: p.homeScore,
 						awayScore: p.awayScore,
 						points: p.points,
@@ -219,19 +216,9 @@ export default async function MatchPage({
 									key={p.userId}
 									className={`flex items-center gap-3 border-b border-border px-5 py-3 last:border-b-0 ${isCurrentUser ? "bg-accent/10" : ""}`}
 								>
-									{p.image ? (
-										<Image
-											src={p.image}
-											alt={p.name}
-											width={32}
-											height={32}
-											className="rounded-full"
-										/>
-									) : (
-										<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
-											{p.name[0]?.toUpperCase()}
-										</div>
-									)}
+									<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
+										{p.name[0]?.toUpperCase()}
+									</div>
 									<span className="flex-1 text-sm font-semibold">
 										{p.name}
 										{isCurrentUser && (
