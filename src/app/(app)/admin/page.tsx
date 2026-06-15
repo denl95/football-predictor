@@ -32,16 +32,42 @@ export default async function AdminPage() {
 	});
 
 	const users = await prisma.user.findMany({
-		orderBy: { createdAt: "asc" },
 		select: {
 			id: true,
 			name: true,
 			email: true,
 			image: true,
 			createdAt: true,
+			predictions: {
+				where: { points: { not: null } },
+				select: { points: true },
+			},
+			bracketMatchPicks: {
+				where: { points: { not: null } },
+				select: { points: true },
+			},
 			_count: { select: { predictions: true, bracketMatchPicks: true } },
 		},
 	});
+
+	const ranked = users
+		.map((user) => {
+			const matchPoints = user.predictions.reduce(
+				(sum, p) => sum + (p.points ?? 0),
+				0,
+			);
+			const bracketPoints = user.bracketMatchPicks.reduce(
+				(sum, p) => sum + (p.points ?? 0),
+				0,
+			);
+			return {
+				...user,
+				matchPoints,
+				bracketPoints,
+				totalPoints: matchPoints + bracketPoints,
+			};
+		})
+		.sort((a, b) => b.totalPoints - a.totalPoints);
 
 	return (
 		<div className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -96,7 +122,7 @@ export default async function AdminPage() {
 
 			<div className="overflow-hidden rounded-2xl border border-border bg-surface">
 				<ul>
-					{users.map((user) => {
+					{ranked.map((user) => {
 						const isSelf = user.id === adminId;
 						return (
 							<li
@@ -131,6 +157,18 @@ export default async function AdminPage() {
 										{user._count.predictions !== 1 ? "s" : ""} ·{" "}
 										{user._count.bracketMatchPicks} bracket pick
 										{user._count.bracketMatchPicks !== 1 ? "s" : ""}
+									</div>
+								</div>
+
+								<div className="flex flex-col items-end gap-0.5">
+									<div className="text-lg font-bold tabular-nums text-accent">
+										{user.totalPoints}
+										<span className="ml-1 text-xs font-normal text-foreground-muted">
+											pts
+										</span>
+									</div>
+									<div className="text-[11px] text-foreground-muted">
+										{user.matchPoints} scores · {user.bracketPoints} bracket
 									</div>
 								</div>
 
