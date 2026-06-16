@@ -199,10 +199,12 @@ export function MatchList({
 	byDay: boolean;
 	isResults?: boolean;
 }>) {
-	// Results view: server already filtered+sorted descending; group by local day.
+	// Results view: finished matches only, most recent first (matches arrive
+	// sorted ascending, so reverse for descending day + within-day order).
 	// Default view: show upcoming+live only (finished removed), grouped by day/group.
 	const filtered = useMemo(() => {
-		if (isResults) return matches.filter((m) => m.status === "FINISHED");
+		if (isResults)
+			return matches.filter((m) => m.status === "FINISHED").reverse();
 		return matches.filter((m) => m.status !== "FINISHED");
 	}, [matches, isResults]);
 
