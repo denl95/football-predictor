@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DeleteUserButton } from "@/components/DeleteUserButton";
 import { FinaliseMatchButton } from "@/components/FinaliseMatchButton";
@@ -127,56 +128,65 @@ export default async function AdminPage() {
 						return (
 							<li
 								key={user.id}
-								className="flex items-center gap-4 border-b border-border px-5 py-4 last:border-b-0"
+								className="flex items-center border-b border-border transition-colors last:border-b-0 hover:bg-surface-2"
 							>
-								{user.image ? (
-									<Image
-										src={user.image}
-										alt={user.name ?? ""}
-										width={36}
-										height={36}
-										className="rounded-full"
-									/>
-								) : (
-									<div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
-										{(user.name ?? user.email)[0]?.toUpperCase()}
-									</div>
-								)}
+								<Link
+									href={isSelf ? "/my-predictions" : `/players/${user.id}`}
+									className="flex flex-1 items-center gap-4 px-5 py-4"
+								>
+									{user.image ? (
+										<Image
+											src={user.image}
+											alt={user.name ?? ""}
+											width={36}
+											height={36}
+											className="rounded-full"
+										/>
+									) : (
+										<div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
+											{(user.name ?? user.email)[0]?.toUpperCase()}
+										</div>
+									)}
 
-								<div className="min-w-0 flex-1">
-									<div className="flex items-center gap-2 font-semibold">
-										<span className="truncate">{user.name ?? "Anonymous"}</span>
-										{isSelf ? (
-											<span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs text-accent">
-												you
+									<div className="min-w-0 flex-1">
+										<div className="flex items-center gap-2 font-semibold">
+											<span className="truncate">
+												{user.name ?? "Anonymous"}
 											</span>
-										) : null}
+											{isSelf ? (
+												<span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs text-accent">
+													you
+												</span>
+											) : null}
+										</div>
+										<div className="truncate text-xs text-foreground-muted">
+											{user.email} · {user._count.predictions} prediction
+											{user._count.predictions !== 1 ? "s" : ""} ·{" "}
+											{user._count.bracketMatchPicks} bracket pick
+											{user._count.bracketMatchPicks !== 1 ? "s" : ""}
+										</div>
 									</div>
-									<div className="truncate text-xs text-foreground-muted">
-										{user.email} · {user._count.predictions} prediction
-										{user._count.predictions !== 1 ? "s" : ""} ·{" "}
-										{user._count.bracketMatchPicks} bracket pick
-										{user._count.bracketMatchPicks !== 1 ? "s" : ""}
-									</div>
-								</div>
 
-								<div className="flex flex-col items-end gap-0.5">
-									<div className="text-lg font-bold tabular-nums text-accent">
-										{user.totalPoints}
-										<span className="ml-1 text-xs font-normal text-foreground-muted">
-											pts
-										</span>
+									<div className="flex flex-col items-end gap-0.5">
+										<div className="text-lg font-bold tabular-nums text-accent">
+											{user.totalPoints}
+											<span className="ml-1 text-xs font-normal text-foreground-muted">
+												pts
+											</span>
+										</div>
+										<div className="text-[11px] text-foreground-muted">
+											{user.matchPoints} scores · {user.bracketPoints} bracket
+										</div>
 									</div>
-									<div className="text-[11px] text-foreground-muted">
-										{user.matchPoints} scores · {user.bracketPoints} bracket
-									</div>
-								</div>
+								</Link>
 
 								{isSelf ? null : (
-									<DeleteUserButton
-										userId={user.id}
-										userName={user.name ?? user.email}
-									/>
+									<div className="pr-5">
+										<DeleteUserButton
+											userId={user.id}
+											userName={user.name ?? user.email}
+										/>
+									</div>
 								)}
 							</li>
 						);
