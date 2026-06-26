@@ -46,6 +46,8 @@ type CardInfo = {
 	homeGroup: string | null;
 	awayGroup: string | null;
 	suggested: string[];
+	homeSlotEditable: boolean;
+	awaySlotEditable: boolean;
 };
 
 type TeamSection = {
@@ -331,6 +333,8 @@ function BracketCard({
 	awayGroup,
 	winner,
 	suggested,
+	homeSlotEditable,
+	awaySlotEditable,
 	isLocked,
 	onPick,
 	onOpenPicker,
@@ -342,6 +346,8 @@ function BracketCard({
 	awayGroup: string | null;
 	winner: string | null;
 	suggested: string[];
+	homeSlotEditable: boolean;
+	awaySlotEditable: boolean;
 	isLocked: boolean;
 	onPick: (matchId: string, team: string) => void;
 	onOpenPicker: (state: PickerState) => void;
@@ -362,6 +368,7 @@ function BracketCard({
 		const labelRow = (label: string, side: "home" | "away") => {
 			const filled = !isLabel(label);
 			const isWinner = winner === label;
+			const editable = side === "home" ? homeSlotEditable : awaySlotEditable;
 
 			if (isLocked) {
 				return (
@@ -400,13 +407,15 @@ function BracketCard({
 						<span className="truncate">{label}</span>
 						{isWinner ? <span className="shrink-0 text-accent">✓</span> : null}
 					</button>
-					<button
-						type="button"
-						onClick={() => openPicker(side)}
-						className="shrink-0 text-[10px] text-foreground-muted transition-colors hover:text-foreground"
-					>
-						Change
-					</button>
+					{editable ? (
+						<button
+							type="button"
+							onClick={() => openPicker(side)}
+							className="shrink-0 text-[10px] text-foreground-muted transition-colors hover:text-foreground"
+						>
+							Change
+						</button>
+					) : null}
 				</div>
 			);
 		};
@@ -482,6 +491,8 @@ function BracketColumn({
 					homeGroup,
 					awayGroup,
 					suggested,
+					homeSlotEditable,
+					awaySlotEditable,
 				}) => (
 					<div
 						key={match.id}
@@ -496,6 +507,8 @@ function BracketColumn({
 							awayGroup={awayGroup}
 							winner={picks[match.id] ?? null}
 							suggested={suggested}
+							homeSlotEditable={homeSlotEditable}
+							awaySlotEditable={awaySlotEditable}
 							isLocked={isLocked}
 							onPick={onPick}
 							onOpenPicker={onOpenPicker}
@@ -675,6 +688,8 @@ export function BracketTree({
 	function r32Card(i: number): CardInfo {
 		const m = r32[i];
 		const slots = slotPicks[m.id];
+		const homeFromSlot = slots?.home !== undefined;
+		const awayFromSlot = slots?.away !== undefined;
 		const home = slots?.home ?? effectiveTeam(m.homeTeam, m.homeLabel);
 		const away = slots?.away ?? effectiveTeam(m.awayTeam, m.awayLabel);
 		return {
@@ -683,6 +698,10 @@ export function BracketTree({
 			awayDisplay: away,
 			homeGroup: parseGroupLetter(m.homeLabel),
 			awayGroup: parseGroupLetter(m.awayLabel),
+			// Slot is editable when DB team is still TBD (user must fill it in)
+			// or when the user already has an override pick (let them change/clear it).
+			homeSlotEditable: m.homeTeam === "TBD" || homeFromSlot,
+			awaySlotEditable: m.awayTeam === "TBD" || awayFromSlot,
 			suggested: [
 				...new Set([
 					...(slots?.home ? [slots.home] : teamsForLabel(m.homeLabel)),
@@ -707,6 +726,8 @@ export function BracketTree({
 			awayDisplay: away,
 			homeGroup: null,
 			awayGroup: null,
+			homeSlotEditable: false,
+			awaySlotEditable: false,
 			suggested: suggested.length > 0 ? suggested : allTeams,
 		};
 	}
