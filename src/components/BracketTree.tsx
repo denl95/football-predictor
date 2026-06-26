@@ -297,6 +297,7 @@ function PickerModal({
 							className="mt-0.5 shrink-0 text-xs text-foreground-muted transition-colors hover:text-red-400"
 							onClick={() => {
 								onClear(state.matchId);
+								onClose();
 							}}
 						>
 							Clear
