@@ -59,14 +59,21 @@ async function main() {
 
 		const externalId = String(m.id);
 		const newStatus = toStatus(m.status);
-		const homeScore = m.score.fullTime.home;
-		const awayScore = m.score.fullTime.away;
+		// Use regularTime (90-min score) for points — fullTime can include ET goals.
+		const homeScore = m.score.regularTime?.home ?? m.score.fullTime.home;
+		const awayScore = m.score.regularTime?.away ?? m.score.fullTime.away;
+		const winner =
+			m.score.winner === "HOME_TEAM"
+				? homeTeam
+				: m.score.winner === "AWAY_TEAM"
+					? awayTeam
+					: null;
 
 		const existing = await prisma.match.findUnique({ where: { externalId } });
 
 		if (!existing) {
 			// New fixture (knockout match just got its teams assigned)
-			await prisma.match.create({
+			const created = await prisma.match.create({
 				data: {
 					externalId,
 					homeTeam,
@@ -83,6 +90,7 @@ async function main() {
 					status: newStatus as "UPCOMING" | "LIVE" | "FINISHED",
 					homeScore: homeScore ?? undefined,
 					awayScore: awayScore ?? undefined,
+					winner,
 				},
 			});
 
@@ -92,10 +100,7 @@ async function main() {
 				homeScore !== null &&
 				awayScore !== null
 			) {
-				const created = await prisma.match.findUnique({
-					where: { externalId },
-				});
-				if (created) await awardPoints(created.id, homeScore, awayScore);
+				await awardPoints(created.id, homeScore, awayScore);
 			}
 
 			console.log(`  + inserted: ${homeTeam} vs ${awayTeam}`);
@@ -103,8 +108,15 @@ async function main() {
 			continue;
 		}
 
-		// Already in DB — skip if already finished (don't overwrite admin corrections)
-		if (existing.status === "FINISHED") continue;
+		// For GROUP stage, draws mean winner is always null — skip once scores are recorded.
+		// For knockout stages, require winner to be set (allows backfill on first sync after deploy).
+		if (
+			existing.status === "FINISHED" &&
+			existing.homeScore !== null &&
+			existing.awayScore !== null &&
+			(existing.stage === "GROUP" || existing.winner !== null)
+		)
+			continue;
 
 		const wasFinished = newStatus === "FINISHED";
 
@@ -114,6 +126,7 @@ async function main() {
 				status: newStatus as "UPCOMING" | "LIVE" | "FINISHED",
 				homeScore: homeScore ?? undefined,
 				awayScore: awayScore ?? undefined,
+				winner,
 			},
 		});
 

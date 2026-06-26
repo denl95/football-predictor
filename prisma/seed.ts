@@ -83,8 +83,14 @@ async function main() {
 				stage,
 				scheduledAt: new Date(m.utcDate),
 				status: toStatus(m.status) as "UPCOMING" | "LIVE" | "FINISHED",
-				homeScore: m.score.fullTime.home ?? undefined,
-				awayScore: m.score.fullTime.away ?? undefined,
+				homeScore: (m.score.regularTime?.home ?? m.score.fullTime.home) ?? undefined,
+				awayScore: (m.score.regularTime?.away ?? m.score.fullTime.away) ?? undefined,
+				winner:
+					m.score.winner === "HOME_TEAM"
+						? homeTeam
+						: m.score.winner === "AWAY_TEAM"
+							? awayTeam
+							: null,
 			},
 			update: {
 				homeTeam,
@@ -93,8 +99,14 @@ async function main() {
 				awayLabel: labels?.[1] ?? null,
 				scheduledAt: new Date(m.utcDate),
 				status: toStatus(m.status) as "UPCOMING" | "LIVE" | "FINISHED",
-				homeScore: m.score.fullTime.home ?? undefined,
-				awayScore: m.score.fullTime.away ?? undefined,
+				homeScore: (m.score.regularTime?.home ?? m.score.fullTime.home) ?? undefined,
+				awayScore: (m.score.regularTime?.away ?? m.score.fullTime.away) ?? undefined,
+				winner:
+					m.score.winner === "HOME_TEAM"
+						? homeTeam
+						: m.score.winner === "AWAY_TEAM"
+							? awayTeam
+							: null,
 			},
 		});
 		upserted++;
