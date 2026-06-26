@@ -46,8 +46,6 @@ type CardInfo = {
 	homeGroup: string | null;
 	awayGroup: string | null;
 	suggested: string[];
-	homeSlotEditable: boolean;
-	awaySlotEditable: boolean;
 };
 
 type TeamSection = {
@@ -59,8 +57,28 @@ type TeamSection = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function effectiveTeam(dbTeam: string, label: string | null): string {
-	return dbTeam !== "TBD" ? dbTeam : (label ?? "TBD");
+// Seed slot picks with the real teams the DB already knows for each R32 slot, so
+// confirmed teams behave as ordinary (editable, clearable) slot picks. The user's
+// own saved picks always take precedence over the DB-derived team.
+function seedSlotsFromDb(
+	initial: Record<string, { home?: string; away?: string }>,
+	r32: BMatch[],
+): Record<string, { home?: string; away?: string }> {
+	const next = { ...initial };
+	for (const m of r32) {
+		const existing = next[m.id];
+		const home =
+			existing?.home ?? (m.homeTeam !== "TBD" ? m.homeTeam : undefined);
+		const away =
+			existing?.away ?? (m.awayTeam !== "TBD" ? m.awayTeam : undefined);
+		const merged: { home?: string; away?: string } = {};
+		if (home !== undefined) merged.home = home;
+		if (away !== undefined) merged.away = away;
+		if (merged.home !== undefined || merged.away !== undefined) {
+			next[m.id] = merged;
+		}
+	}
+	return next;
 }
 
 function isLabel(s: string): boolean {
@@ -333,8 +351,6 @@ function BracketCard({
 	awayGroup,
 	winner,
 	suggested,
-	homeSlotEditable,
-	awaySlotEditable,
 	isLocked,
 	onPick,
 	onOpenPicker,
@@ -346,8 +362,6 @@ function BracketCard({
 	awayGroup: string | null;
 	winner: string | null;
 	suggested: string[];
-	homeSlotEditable: boolean;
-	awaySlotEditable: boolean;
 	isLocked: boolean;
 	onPick: (matchId: string, team: string) => void;
 	onOpenPicker: (state: PickerState) => void;
@@ -368,7 +382,6 @@ function BracketCard({
 		const labelRow = (label: string, side: "home" | "away") => {
 			const filled = !isLabel(label);
 			const isWinner = winner === label;
-			const editable = side === "home" ? homeSlotEditable : awaySlotEditable;
 
 			if (isLocked) {
 				return (
@@ -407,15 +420,13 @@ function BracketCard({
 						<span className="truncate">{label}</span>
 						{isWinner ? <span className="shrink-0 text-accent">✓</span> : null}
 					</button>
-					{editable ? (
-						<button
-							type="button"
-							onClick={() => openPicker(side)}
-							className="shrink-0 text-[10px] text-foreground-muted transition-colors hover:text-foreground"
-						>
-							Change
-						</button>
-					) : null}
+					<button
+						type="button"
+						onClick={() => openPicker(side)}
+						className="shrink-0 text-[10px] text-foreground-muted transition-colors hover:text-foreground"
+					>
+						Change
+					</button>
 				</div>
 			);
 		};
@@ -491,8 +502,6 @@ function BracketColumn({
 					homeGroup,
 					awayGroup,
 					suggested,
-					homeSlotEditable,
-					awaySlotEditable,
 				}) => (
 					<div
 						key={match.id}
@@ -507,8 +516,6 @@ function BracketColumn({
 							awayGroup={awayGroup}
 							winner={picks[match.id] ?? null}
 							suggested={suggested}
-							homeSlotEditable={homeSlotEditable}
-							awaySlotEditable={awaySlotEditable}
 							isLocked={isLocked}
 							onPick={onPick}
 							onOpenPicker={onOpenPicker}
@@ -544,10 +551,9 @@ export function BracketTree({
 	isLocked: boolean;
 }>) {
 	const [picks, setPicks] = useState<Record<string, string>>(initialPicks);
-	const [slotPicks, setSlotPicks] =
-		useState<Record<string, { home?: string; away?: string }>>(
-			initialSlotPicks,
-		);
+	const [slotPicks, setSlotPicks] = useState<
+		Record<string, { home?: string; away?: string }>
+	>(() => seedSlotsFromDb(initialSlotPicks, r32));
 	const [dirty, setDirty] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [picker, setPicker] = useState<PickerState | null>(null);
@@ -569,12 +575,6 @@ export function BracketTree({
 		return map;
 	}, [r32, r16, qf, sf, finalMatch]);
 
-	const r32ById = useMemo(() => {
-		const map: Record<string, BMatch> = {};
-		for (const m of r32) map[m.id] = m;
-		return map;
-	}, [r32]);
-
 	function cascadeClear(
 		prev: Record<string, string>,
 		fromMatchId: string,
@@ -588,30 +588,20 @@ export function BracketTree({
 		return next;
 	}
 
-	// The real teams an R32 match can currently be won by: its filled slots, or its
-	// actual teams once the group stage resolves them.
-	function r32SlotTeams(
-		matchId: string,
-		slots: { home?: string; away?: string } | undefined,
-	): string[] {
-		const m = r32ById[matchId];
-		const home =
-			slots?.home ?? (m && m.homeTeam !== "TBD" ? m.homeTeam : undefined);
-		const away =
-			slots?.away ?? (m && m.awayTeam !== "TBD" ? m.awayTeam : undefined);
-		return [home, away].filter((t): t is string => t !== undefined);
-	}
-
 	// After a slot changes, the saved winner may no longer be one of the match's
 	// teams (e.g. it was replaced or cleared) — drop the now-invalid winner and
-	// cascade so it stops propagating into later rounds.
+	// cascade so it stops propagating into later rounds. Slots are seeded from the
+	// DB at init, so a cleared slot is genuinely empty and its winner is dropped.
 	function reconcileWinner(
 		matchId: string,
 		newSlots: { home?: string; away?: string } | undefined,
 	) {
 		const winner = picks[matchId];
 		if (!winner) return;
-		if (r32SlotTeams(matchId, newSlots).includes(winner)) return;
+		const slotTeams = [newSlots?.home, newSlots?.away].filter(
+			(t): t is string => t !== undefined,
+		);
+		if (slotTeams.includes(winner)) return;
 		setPicks((prev) => {
 			const next = { ...prev };
 			delete next[matchId];
@@ -626,6 +616,7 @@ export function BracketTree({
 			const side = rawSide as "home" | "away";
 			const newSlots = { ...slotPicks[matchId], [side]: team };
 			setSlotPicks((prev) => ({ ...prev, [matchId]: newSlots }));
+			setDirty(true);
 			reconcileWinner(matchId, newSlots);
 		} else {
 			setPicks((prev) => cascadeClear({ ...prev, [key]: team }, key));
@@ -644,6 +635,7 @@ export function BracketTree({
 				if (next[matchId]) next[matchId] = newSlots;
 				return next;
 			});
+			setDirty(true);
 			reconcileWinner(matchId, newSlots);
 		} else {
 			setPicks((prev) => {
@@ -688,20 +680,16 @@ export function BracketTree({
 	function r32Card(i: number): CardInfo {
 		const m = r32[i];
 		const slots = slotPicks[m.id];
-		const homeFromSlot = slots?.home !== undefined;
-		const awayFromSlot = slots?.away !== undefined;
-		const home = slots?.home ?? effectiveTeam(m.homeTeam, m.homeLabel);
-		const away = slots?.away ?? effectiveTeam(m.awayTeam, m.awayLabel);
+		// Display the slot pick (which is seeded from the DB team when known), else
+		// the slot label. No DB fallback here — a cleared slot stays empty.
+		const home = slots?.home ?? m.homeLabel ?? "TBD";
+		const away = slots?.away ?? m.awayLabel ?? "TBD";
 		return {
 			match: m,
 			homeDisplay: home,
 			awayDisplay: away,
 			homeGroup: parseGroupLetter(m.homeLabel),
 			awayGroup: parseGroupLetter(m.awayLabel),
-			// Slot is editable when DB team is still TBD (user must fill it in)
-			// or when the user already has an override pick (let them change/clear it).
-			homeSlotEditable: m.homeTeam === "TBD" || homeFromSlot,
-			awaySlotEditable: m.awayTeam === "TBD" || awayFromSlot,
 			suggested: [
 				...new Set([
 					...(slots?.home ? [slots.home] : teamsForLabel(m.homeLabel)),
@@ -726,8 +714,6 @@ export function BracketTree({
 			awayDisplay: away,
 			homeGroup: null,
 			awayGroup: null,
-			homeSlotEditable: false,
-			awaySlotEditable: false,
 			suggested: suggested.length > 0 ? suggested : allTeams,
 		};
 	}
