@@ -30,7 +30,6 @@ async function awardPoints(
 }
 
 export async function GET(request: NextRequest) {
-	// Verify the request comes from Vercel Cron or an authorised caller
 	const authHeader = request.headers.get("authorization");
 	if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -45,18 +44,22 @@ export async function GET(request: NextRequest) {
 		const homeTeam = m.homeTeam.name;
 		const awayTeam = m.awayTeam.name;
 
-		// Skip fixtures where teams aren't confirmed yet (knockout TBD)
 		if (!homeTeam || !awayTeam) continue;
 
 		const externalId = String(m.id);
 		const newStatus = toStatus(m.status);
 		const homeScore = m.score.fullTime.home;
 		const awayScore = m.score.fullTime.away;
+		const winner =
+			m.score.winner === "HOME_TEAM"
+				? homeTeam
+				: m.score.winner === "AWAY_TEAM"
+					? awayTeam
+					: null;
 
 		const existing = await prisma.match.findUnique({ where: { externalId } });
 
 		if (!existing) {
-			// New fixture — knockout match just got its teams assigned
 			const created = await prisma.match.create({
 				data: {
 					externalId,
@@ -74,6 +77,7 @@ export async function GET(request: NextRequest) {
 					status: newStatus as "UPCOMING" | "LIVE" | "FINISHED",
 					homeScore: homeScore ?? undefined,
 					awayScore: awayScore ?? undefined,
+					winner,
 				},
 			});
 
@@ -89,14 +93,14 @@ export async function GET(request: NextRequest) {
 			continue;
 		}
 
-		// Skip only if already finished AND scores are recorded — this prevents
-		// overwriting admin corrections. If status is FINISHED but scores are null
-		// (football-data briefly returned FINISHED before populating fullTime), we
-		// still need to write the scores and award points.
+		// Skip only when fully settled: finished, scores recorded, and winner stored.
+		// Omitting `existing.winner !== null` allows backfilling winner on matches
+		// that were synced before this field existed.
 		if (
 			existing.status === "FINISHED" &&
 			existing.homeScore !== null &&
-			existing.awayScore !== null
+			existing.awayScore !== null &&
+			existing.winner !== null
 		)
 			continue;
 
@@ -108,6 +112,7 @@ export async function GET(request: NextRequest) {
 				status: newStatus as "UPCOMING" | "LIVE" | "FINISHED",
 				homeScore: homeScore ?? undefined,
 				awayScore: awayScore ?? undefined,
+				winner,
 			},
 		});
 
