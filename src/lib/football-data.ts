@@ -7,6 +7,7 @@ export type FDMatch = {
 	homeTeam: { name: string | null };
 	awayTeam: { name: string | null };
 	score: {
+		winner: string | null;
 		fullTime: { home: number | null; away: number | null };
 	};
 };

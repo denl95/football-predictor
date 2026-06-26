@@ -91,6 +91,7 @@ model Match {
   scheduledAt       DateTime
   homeScore         Int?
   awayScore         Int?
+  winner            String?
   status            MatchStatus        @default(UPCOMING)
   predictions       Prediction[]
   bracketMatchPicks BracketMatchPick[]
