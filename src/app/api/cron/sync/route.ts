@@ -93,14 +93,13 @@ export async function GET(request: NextRequest) {
 			continue;
 		}
 
-		// Skip only when fully settled: finished, scores recorded, and winner stored.
-		// Omitting `existing.winner !== null` allows backfilling winner on matches
-		// that were synced before this field existed.
+		// For GROUP stage, draws mean winner is always null — skip once scores are recorded.
+		// For knockout stages, require winner to be set (allows backfill on first sync after deploy).
 		if (
 			existing.status === "FINISHED" &&
 			existing.homeScore !== null &&
 			existing.awayScore !== null &&
-			existing.winner !== null
+			(existing.stage === "GROUP" || existing.winner !== null)
 		)
 			continue;
 
