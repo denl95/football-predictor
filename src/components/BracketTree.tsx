@@ -2,6 +2,15 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { saveBracketPicks } from "@/actions/bracket";
+import {
+	CARD_W,
+	CONN_W,
+	displayLabel,
+	HorizLine,
+	LeftConnector,
+	RightConnector,
+	TOTAL,
+} from "@/components/bracket-layout";
 import { Flag } from "@/components/Flag";
 import {
 	GROUPS,
@@ -46,26 +55,10 @@ type TeamSection = {
 	showGroup: boolean;
 };
 
-// ─── Layout constants ─────────────────────────────────────────────────────────
-
-// Dimensions are driven by CSS custom properties so the whole bracket scales up on
-// larger screens. The variables themselves are set (with responsive breakpoints) on
-// the root container below; these strings just reference them in inline styles.
-const TOTAL = "calc(8 * var(--bk-unit))";
-const CARD_W = "var(--bk-card)";
-const CONN_W = "var(--bk-conn)";
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function effectiveTeam(dbTeam: string, label: string | null): string {
 	return dbTeam !== "TBD" ? dbTeam : (label ?? "TBD");
-}
-
-/** Condense "Best 3rd Place (ABCDF)" → "Best 3rd (A/B/C/D/F)" for the card UI. */
-function displayLabel(label: string): string {
-	const m = /^Best 3rd Place \(([A-L]+)\)$/.exec(label);
-	if (!m) return label;
-	return `Best 3rd (${[...m[1]].join("/")})`;
 }
 
 function isLabel(s: string): boolean {
@@ -458,49 +451,6 @@ function BracketCard({
 			{teamRow(homeDisplay, homeSelected, homeTBD)}
 			<div className="h-px bg-border/30" />
 			{teamRow(awayDisplay, awaySelected, awayTBD)}
-		</div>
-	);
-}
-
-// ─── Connector strips ─────────────────────────────────────────────────────────
-
-function LeftConnector({ pairs }: Readonly<{ pairs: number }>) {
-	const flexPer = 8 / pairs;
-	const keys = Array.from({ length: pairs }, (_, i) => `lc-${i}`);
-	return (
-		<div className="flex flex-col" style={{ height: TOTAL, width: CONN_W }}>
-			{keys.map((k) => (
-				<div key={k} className="flex flex-col" style={{ flex: flexPer * 2 }}>
-					<div className="flex-1 rounded-br border-b-2 border-r-2 border-border/40" />
-					<div className="flex-1 rounded-tr border-r-2 border-t-2 border-border/40" />
-				</div>
-			))}
-		</div>
-	);
-}
-
-function RightConnector({ pairs }: Readonly<{ pairs: number }>) {
-	const flexPer = 8 / pairs;
-	const keys = Array.from({ length: pairs }, (_, i) => `rc-${i}`);
-	return (
-		<div className="flex flex-col" style={{ height: TOTAL, width: CONN_W }}>
-			{keys.map((k) => (
-				<div key={k} className="flex flex-col" style={{ flex: flexPer * 2 }}>
-					<div className="flex-1 rounded-bl border-b-2 border-l-2 border-border/40" />
-					<div className="flex-1 rounded-tl border-l-2 border-t-2 border-border/40" />
-				</div>
-			))}
-		</div>
-	);
-}
-
-function HorizLine({ side }: Readonly<{ side: "left" | "right" }>) {
-	return (
-		<div
-			className={`flex items-center ${side === "right" ? "justify-end" : ""}`}
-			style={{ height: TOTAL, width: CONN_W }}
-		>
-			<div className="h-0.5 w-full bg-border/40" />
 		</div>
 	);
 }
