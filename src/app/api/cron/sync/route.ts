@@ -48,8 +48,9 @@ export async function GET(request: NextRequest) {
 
 		const externalId = String(m.id);
 		const newStatus = toStatus(m.status);
-		const homeScore = m.score.fullTime.home;
-		const awayScore = m.score.fullTime.away;
+		// Use regularTime (90-min score) for points — fullTime can include ET goals.
+		const homeScore = m.score.regularTime?.home ?? m.score.fullTime.home;
+		const awayScore = m.score.regularTime?.away ?? m.score.fullTime.away;
 		const winner =
 			m.score.winner === "HOME_TEAM"
 				? homeTeam
