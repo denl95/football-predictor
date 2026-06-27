@@ -1,6 +1,7 @@
 import { getBracketLockAt } from "@/actions/bracket";
 import { BracketPageClient } from "@/components/BracketPageClient";
 import { auth } from "@/lib/auth";
+import { orderByBracketPosition } from "@/lib/bracket";
 import { prisma } from "@/lib/db";
 
 export default async function BracketPage() {
@@ -11,10 +12,22 @@ export default async function BracketPage() {
 		orderBy: { scheduledAt: "asc" },
 	});
 
-	const r32 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_32");
-	const r16 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_16");
-	const qf = knockoutMatches.filter((m) => m.stage === "QUARTER_FINAL");
-	const sf = knockoutMatches.filter((m) => m.stage === "SEMI_FINAL");
+	const r32 = orderByBracketPosition(
+		knockoutMatches.filter((m) => m.stage === "ROUND_OF_32"),
+		"ROUND_OF_32",
+	);
+	const r16 = orderByBracketPosition(
+		knockoutMatches.filter((m) => m.stage === "ROUND_OF_16"),
+		"ROUND_OF_16",
+	);
+	const qf = orderByBracketPosition(
+		knockoutMatches.filter((m) => m.stage === "QUARTER_FINAL"),
+		"QUARTER_FINAL",
+	);
+	const sf = orderByBracketPosition(
+		knockoutMatches.filter((m) => m.stage === "SEMI_FINAL"),
+		"SEMI_FINAL",
+	);
 	const finalMatch = knockoutMatches.find((m) => m.stage === "FINAL") ?? null;
 
 	const rawPicks = session?.user?.id
