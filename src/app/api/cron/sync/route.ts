@@ -94,17 +94,17 @@ export async function GET(request: NextRequest) {
 			continue;
 		}
 
-		// For GROUP stage, draws mean winner is always null — skip once scores are recorded.
-		// For knockout stages, require winner to be set (allows backfill on first sync after deploy).
+		// Skip only when nothing changed. If the status/score/winner differs (e.g. a
+		// corrected final score), apply the update and recompute points below — this
+		// keeps prediction points in sync when a result settles after first being
+		// recorded (the old "skip once finished" guard left those points stale).
 		if (
-			existing.status === "FINISHED" &&
-			existing.homeScore !== null &&
-			existing.awayScore !== null &&
-			(existing.stage === "GROUP" || existing.winner !== null)
+			existing.status === newStatus &&
+			existing.homeScore === homeScore &&
+			existing.awayScore === awayScore &&
+			existing.winner === winner
 		)
 			continue;
-
-		const wasFinished = newStatus === "FINISHED";
 
 		await prisma.match.update({
 			where: { id: existing.id },
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
 			},
 		});
 
-		if (wasFinished && homeScore !== null && awayScore !== null) {
+		if (newStatus === "FINISHED" && homeScore !== null && awayScore !== null) {
 			await awardPoints(existing.id, homeScore, awayScore);
 		}
 
