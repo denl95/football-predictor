@@ -1,7 +1,6 @@
 import { getBracketLockAt } from "@/actions/bracket";
 import { BracketPageClient } from "@/components/BracketPageClient";
 import { auth } from "@/lib/auth";
-import { orderByBracketPosition } from "@/lib/bracket";
 import { prisma } from "@/lib/db";
 
 export default async function BracketPage() {
@@ -12,18 +11,13 @@ export default async function BracketPage() {
 		orderBy: { scheduledAt: "asc" },
 	});
 
-	// Prediction bracket: keep the original kick-off order — this is the structure
-	// users filled in, and reordering it would scramble already-saved picks.
-	const predR32 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_32");
-	const predR16 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_16");
-	const predQF = knockoutMatches.filter((m) => m.stage === "QUARTER_FINAL");
-	const predSF = knockoutMatches.filter((m) => m.stage === "SEMI_FINAL");
-
-	// Real bracket: lay out by official FIFA bracket position.
-	const realR32 = orderByBracketPosition(predR32, "ROUND_OF_32");
-	const realR16 = orderByBracketPosition(predR16, "ROUND_OF_16");
-	const realQF = orderByBracketPosition(predQF, "QUARTER_FINAL");
-	const realSF = orderByBracketPosition(predSF, "SEMI_FINAL");
+	// Both brackets share the same kick-off order so they line up position-by-position
+	// (each slot = the same match in both tabs, for a direct prediction-vs-reality
+	// comparison). The prediction bracket keeps the order picks were made against.
+	const r32 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_32");
+	const r16 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_16");
+	const qf = knockoutMatches.filter((m) => m.stage === "QUARTER_FINAL");
+	const sf = knockoutMatches.filter((m) => m.stage === "SEMI_FINAL");
 
 	const finalMatch = knockoutMatches.find((m) => m.stage === "FINAL") ?? null;
 
@@ -75,14 +69,10 @@ export default async function BracketPage() {
 			</div>
 
 			<BracketPageClient
-				predR32={predR32}
-				predR16={predR16}
-				predQF={predQF}
-				predSF={predSF}
-				realR32={realR32}
-				realR16={realR16}
-				realQF={realQF}
-				realSF={realSF}
+				r32={r32}
+				r16={r16}
+				qf={qf}
+				sf={sf}
 				finalMatch={finalMatch}
 				initialPicks={initialPicks}
 				initialSlotPicks={initialSlotPicks}
