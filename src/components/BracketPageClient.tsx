@@ -21,10 +21,16 @@ type KnockoutMatch = {
 };
 
 type Props = {
-	r32: KnockoutMatch[];
-	r16: KnockoutMatch[];
-	qf: KnockoutMatch[];
-	sf: KnockoutMatch[];
+	// Prediction bracket keeps its original kick-off order (the structure picks were
+	// made against); the real bracket uses official FIFA bracket-position order.
+	predR32: KnockoutMatch[];
+	predR16: KnockoutMatch[];
+	predQF: KnockoutMatch[];
+	predSF: KnockoutMatch[];
+	realR32: KnockoutMatch[];
+	realR16: KnockoutMatch[];
+	realQF: KnockoutMatch[];
+	realSF: KnockoutMatch[];
 	finalMatch: KnockoutMatch | null;
 	initialPicks: Record<string, string>;
 	initialSlotPicks: Record<string, { home?: string; away?: string }>;
@@ -35,10 +41,14 @@ type Props = {
 };
 
 export function BracketPageClient({
-	r32,
-	r16,
-	qf,
-	sf,
+	predR32,
+	predR16,
+	predQF,
+	predSF,
+	realR32,
+	realR16,
+	realQF,
+	realSF,
 	finalMatch,
 	initialPicks,
 	initialSlotPicks,
@@ -124,10 +134,10 @@ export function BracketPageClient({
 					</div>
 
 					<BracketTree
-						r32={r32}
-						r16={r16}
-						qf={qf}
-						sf={sf}
+						r32={predR32}
+						r16={predR16}
+						qf={predQF}
+						sf={predSF}
 						finalMatch={finalMatch}
 						initialPicks={initialPicks}
 						initialSlotPicks={initialSlotPicks}
@@ -137,10 +147,10 @@ export function BracketPageClient({
 				</>
 			) : (
 				<RealBracketTree
-					r32={r32}
-					r16={r16}
-					qf={qf}
-					sf={sf}
+					r32={realR32}
+					r16={realR16}
+					qf={realQF}
+					sf={realSF}
 					finalMatch={finalMatch}
 				/>
 			)}

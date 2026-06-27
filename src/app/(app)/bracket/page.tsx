@@ -12,22 +12,19 @@ export default async function BracketPage() {
 		orderBy: { scheduledAt: "asc" },
 	});
 
-	const r32 = orderByBracketPosition(
-		knockoutMatches.filter((m) => m.stage === "ROUND_OF_32"),
-		"ROUND_OF_32",
-	);
-	const r16 = orderByBracketPosition(
-		knockoutMatches.filter((m) => m.stage === "ROUND_OF_16"),
-		"ROUND_OF_16",
-	);
-	const qf = orderByBracketPosition(
-		knockoutMatches.filter((m) => m.stage === "QUARTER_FINAL"),
-		"QUARTER_FINAL",
-	);
-	const sf = orderByBracketPosition(
-		knockoutMatches.filter((m) => m.stage === "SEMI_FINAL"),
-		"SEMI_FINAL",
-	);
+	// Prediction bracket: keep the original kick-off order — this is the structure
+	// users filled in, and reordering it would scramble already-saved picks.
+	const predR32 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_32");
+	const predR16 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_16");
+	const predQF = knockoutMatches.filter((m) => m.stage === "QUARTER_FINAL");
+	const predSF = knockoutMatches.filter((m) => m.stage === "SEMI_FINAL");
+
+	// Real bracket: lay out by official FIFA bracket position.
+	const realR32 = orderByBracketPosition(predR32, "ROUND_OF_32");
+	const realR16 = orderByBracketPosition(predR16, "ROUND_OF_16");
+	const realQF = orderByBracketPosition(predQF, "QUARTER_FINAL");
+	const realSF = orderByBracketPosition(predSF, "SEMI_FINAL");
+
 	const finalMatch = knockoutMatches.find((m) => m.stage === "FINAL") ?? null;
 
 	const rawPicks = session?.user?.id
@@ -78,10 +75,14 @@ export default async function BracketPage() {
 			</div>
 
 			<BracketPageClient
-				r32={r32}
-				r16={r16}
-				qf={qf}
-				sf={sf}
+				predR32={predR32}
+				predR16={predR16}
+				predQF={predQF}
+				predSF={predSF}
+				realR32={realR32}
+				realR16={realR16}
+				realQF={realQF}
+				realSF={realSF}
 				finalMatch={finalMatch}
 				initialPicks={initialPicks}
 				initialSlotPicks={initialSlotPicks}
