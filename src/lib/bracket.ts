@@ -33,23 +33,22 @@ export const GROUPS: Record<string, string[]> = {
 };
 
 // Canonical bracket-position order, keyed by football-data.org externalId.
-// The knockout bracket must be laid out by BRACKET POSITION, not kick-off time —
-// sorting by scheduledAt scrambles which matches sit adjacent and feed the same
-// next-round match. This order is derived from the official FIFA 2026 bracket
-// routing (R16: M89=W74vW77, M90=W73vW75, …) and cross-checked against the live
-// FIFA/Google bracket. Within each round, index 0..n is top-to-bottom: the two
-// halves are concatenated (left half first, then right half), and adjacent pairs
-// (0,1),(2,3),… each feed one match in the next round.
+// The knockout bracket is laid out by BRACKET POSITION, not kick-off time. This
+// matches the official NYT/Athletic & FIFA bracket layout, which lists the Round of
+// 32 by match id numerically (537415→537430) — putting the Group E winner vs Group I
+// winner match (Germany vs France) at the top. R16/QF/SF are ordered so each slot is
+// fed by the adjacent pair in the previous round (per FIFA routing M89=W74vW77, …).
+// Within each round index 0..n is top-to-bottom (left half then right half).
 export const BRACKET_ORDER: Record<string, readonly string[]> = {
 	ROUND_OF_32: [
-		"537417",
-		"537418",
 		"537415",
 		"537416",
-		"537422",
-		"537421",
+		"537417",
+		"537418",
 		"537419",
 		"537420",
+		"537421",
+		"537422",
 		"537423",
 		"537424",
 		"537425",
@@ -60,10 +59,10 @@ export const BRACKET_ORDER: Record<string, readonly string[]> = {
 		"537430",
 	],
 	ROUND_OF_16: [
-		"537376",
 		"537375",
-		"537380",
+		"537376",
 		"537379",
+		"537380",
 		"537377",
 		"537378",
 		"537381",
