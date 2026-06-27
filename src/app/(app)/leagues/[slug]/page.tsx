@@ -1,13 +1,7 @@
 import { headers } from "next/headers";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyButton } from "@/components/CopyButton";
-import type { BarEntry } from "@/components/LeaderboardChart";
-import {
-	LeaderboardChart,
-	PointsBarChart,
-} from "@/components/LeaderboardChart";
-import { RemoveMemberButton } from "@/components/RemoveMemberButton";
+import { LeagueLeaderboard } from "@/components/LeagueLeaderboard";
 import { RenameLeagueForm } from "@/components/RenameLeagueForm";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -52,7 +46,9 @@ export default async function LeaguePage({
 
 	if (!league) notFound();
 
-	const ranked = league.members
+	// Per-player point totals. Ranking/sorting happens client-side in
+	// LeagueLeaderboard so the Scores/Bracket toggle can re-rank without a refetch.
+	const players = league.members
 		.map(({ user }) => ({
 			id: user.id,
 			name: user.name ?? "Anonymous",
@@ -66,22 +62,15 @@ export default async function LeaguePage({
 			),
 			predictionsScored: user.predictions.length,
 		}))
-		.map((p) => ({ ...p, totalPoints: p.matchPoints + p.bracketPoints }))
 		.sort(
 			(a, b) =>
-				b.totalPoints - a.totalPoints ||
+				b.matchPoints - a.matchPoints ||
 				b.predictionsScored - a.predictionsScored,
 		);
 
-	// Bar chart: current totals per player (sorted by rank already)
-	const barData: BarEntry[] = ranked.map((u) => ({
-		name: u.name,
-		points: u.totalPoints,
-	}));
-
-	// Build chart data: cumulative points over time, scoped to league members
+	// Build chart data: cumulative match points over time, scoped to league members
 	const memberIds = league.members.map((m) => m.userId);
-	const playerNames = ranked.map((u) => u.name);
+	const playerNames = players.map((u) => u.name);
 
 	const windowIds = await windowMatchIds();
 	const predictionStatus = await memberPredictionStatus(memberIds, windowIds);
@@ -133,7 +122,6 @@ export default async function LeaguePage({
 	const proto = h.get("x-forwarded-proto") ?? "https";
 	const joinUrl = `${proto}://${host}/leagues/join/${slug}`;
 
-	const medals = ["🥇", "🥈", "🥉"];
 	const isCreator = league.createdBy === userId;
 
 	return (
@@ -142,7 +130,7 @@ export default async function LeaguePage({
 				<div className="flex flex-col gap-1">
 					<h1 className="text-2xl font-bold">{league.name}</h1>
 					<p className="text-sm text-foreground-muted">
-						{ranked.length} member{ranked.length !== 1 ? "s" : ""}
+						{players.length} member{players.length !== 1 ? "s" : ""}
 					</p>
 				</div>
 				{isCreator ? (
@@ -158,113 +146,17 @@ export default async function LeaguePage({
 				<CopyButton text={joinUrl} />
 			</div>
 
-			<PointsBarChart data={barData} />
-
-			<LeaderboardChart data={chartData} players={playerNames} />
-
-			{/* Leaderboard */}
-			<div className="overflow-hidden rounded-2xl border border-border bg-surface">
-				{ranked.length === 0 ? (
-					<p className="px-6 py-12 text-center text-foreground-muted">
-						No members yet.
-					</p>
-				) : (
-					<ol>
-						{ranked.map((player, i) => {
-							const isCurrentUser = player.id === userId;
-							const canRemove = isCreator && player.id !== league.createdBy;
-							const rankColor =
-								i === 0
-									? "text-gold"
-									: i < 3
-										? "text-accent"
-										: "text-foreground";
-							return (
-								<li
-									key={player.id}
-									className={`flex items-center border-b border-border last:border-b-0 transition-colors ${isCurrentUser ? "bg-accent/10" : "hover:bg-surface-2"}`}
-								>
-									<Link
-										href={
-											isCurrentUser
-												? "/my-predictions"
-												: `/players/${player.id}`
-										}
-										className="flex flex-1 items-center gap-4 px-5 py-4"
-									>
-										<span className="w-8 text-center text-lg">
-											{medals[i] ?? (
-												<span className="text-sm text-foreground-muted">
-													{i + 1}
-												</span>
-											)}
-										</span>
-
-										<div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-2 text-sm font-bold">
-											{player.name[0]?.toUpperCase()}
-										</div>
-
-										<div className="flex-1">
-											<div className="flex items-center gap-2 font-semibold">
-												{player.name}
-												{isCurrentUser && (
-													<span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs text-accent">
-														you
-													</span>
-												)}
-											</div>
-											<div className="flex items-center gap-2 text-xs text-foreground-muted">
-												<span>
-													{player.predictionsScored} result
-													{player.predictionsScored !== 1 ? "s" : ""} scored
-												</span>
-												{hasPredictionWindow ? (
-													predictionStatus[player.id] === "ready" ? (
-														<span className="rounded-full bg-accent/15 px-2 py-0.5 text-[11px] font-medium text-accent">
-															✓ ready
-														</span>
-													) : (
-														<span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-foreground-muted">
-															pending
-														</span>
-													)
-												) : null}
-											</div>
-										</div>
-
-										<div className="flex flex-col items-end gap-0.5">
-											<div
-												className={`text-xl font-bold tabular-nums ${rankColor}`}
-											>
-												{player.totalPoints}
-												<span className="ml-1 text-sm font-normal text-foreground-muted">
-													pts
-												</span>
-											</div>
-											<div className="flex items-center gap-1.5 text-[11px] text-foreground-muted">
-												<span>{player.matchPoints} scores</span>
-												<span>·</span>
-												<span>{player.bracketPoints} bracket</span>
-											</div>
-										</div>
-									</Link>
-									{canRemove ? (
-										<RemoveMemberButton
-											slug={slug}
-											userId={player.id}
-											userName={player.name}
-										/>
-									) : null}
-								</li>
-							);
-						})}
-					</ol>
-				)}
-			</div>
-
-			<p className="text-center text-xs text-foreground-muted">
-				Points: 3 exact score · 2 goal difference · 1 correct winner
-			</p>
+			<LeagueLeaderboard
+				players={players}
+				currentUserId={userId}
+				creatorId={league.createdBy}
+				isCreator={isCreator}
+				slug={slug}
+				predictionStatus={predictionStatus}
+				hasPredictionWindow={hasPredictionWindow}
+				lineData={chartData}
+				playerNames={playerNames}
+			/>
 		</div>
 	);
 }
