@@ -12,7 +12,8 @@ export default async function BracketPage() {
 		orderBy: { scheduledAt: "asc" },
 	});
 
-	// Prediction bracket: keep the kick-off order picks were made against (left as-is).
+	// Prediction bracket: keep the original kick-off order picks were made against —
+	// never reorder it, or already-saved picks shift around.
 	const predR32 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_32");
 	const predR16 = knockoutMatches.filter((m) => m.stage === "ROUND_OF_16");
 	const predQF = knockoutMatches.filter((m) => m.stage === "QUARTER_FINAL");

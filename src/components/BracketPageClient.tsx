@@ -21,9 +21,9 @@ type KnockoutMatch = {
 };
 
 type Props = {
-	// Prediction bracket keeps its kick-off order (the structure picks were made
-	// against); the real bracket uses official FIFA bracket-position order so the
-	// matchups are correct (e.g. Group E winner meets Group I winner in the R16).
+	// Prediction bracket keeps its original kick-off order (never reordered, so saved
+	// picks stay put); the real bracket uses official FIFA bracket-position order so
+	// the matchups are correct (Group E winner meets Group I winner in the R16).
 	predR32: KnockoutMatch[];
 	predR16: KnockoutMatch[];
 	predQF: KnockoutMatch[];
