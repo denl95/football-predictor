@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
 	CARD_W,
 	CONN_W,
@@ -56,27 +57,40 @@ function RealBracketCard({ match }: Readonly<{ match: RealBMatch }>) {
 		score: number | null,
 		isTBD: boolean,
 		isWinner: boolean,
-	) => (
-		<div
-			className={`flex items-center gap-1.5 px-2 py-1.5 text-xs lg:text-sm ${
-				isWinner
-					? "bg-accent/20 font-semibold text-accent"
-					: isTBD
-						? "text-foreground-muted opacity-50"
-						: "text-foreground"
-			}`}
-		>
-			{!isTBD ? <Flag name={display} /> : null}
-			<span className="flex-1 truncate">{display}</span>
-			{showScores && score !== null ? (
-				<span
-					className={`shrink-0 tabular-nums ${isWinner ? "text-accent" : "text-foreground-muted"}`}
-				>
-					{score}
-				</span>
-			) : null}
-		</div>
-	);
+	) => {
+		const base = `flex items-center gap-1.5 px-2 py-1.5 text-xs lg:text-sm ${
+			isWinner
+				? "bg-accent/20 font-semibold text-accent"
+				: isTBD
+					? "text-foreground-muted opacity-50"
+					: "text-foreground"
+		}`;
+		const inner = (
+			<>
+				{!isTBD ? <Flag name={display} /> : null}
+				<span className="flex-1 truncate">{display}</span>
+				{showScores && score !== null ? (
+					<span
+						className={`shrink-0 tabular-nums ${isWinner ? "text-accent" : "text-foreground-muted"}`}
+					>
+						{score}
+					</span>
+				) : null}
+			</>
+		);
+
+		// TBD slots aren't real teams yet — render as plain, non-clickable text.
+		if (isTBD) return <div className={base}>{inner}</div>;
+
+		return (
+			<Link
+				href={`/teams/${encodeURIComponent(display)}`}
+				className={`${base} transition-colors ${isWinner ? "hover:bg-accent/30" : "hover:bg-surface-2"}`}
+			>
+				{inner}
+			</Link>
+		);
+	};
 
 	return (
 		<div
