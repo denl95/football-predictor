@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { R32_LABELS } from "@/lib/bracket";
 import { prisma } from "@/lib/db";
 import {
 	fetchWCMatches,
@@ -48,6 +49,14 @@ export async function GET(request: NextRequest) {
 
 		const externalId = String(m.id);
 		const newStatus = toStatus(m.status);
+		const stage = toStage(m.stage) as
+			| "GROUP"
+			| "ROUND_OF_32"
+			| "ROUND_OF_16"
+			| "QUARTER_FINAL"
+			| "SEMI_FINAL"
+			| "FINAL";
+		const labels = stage === "ROUND_OF_32" ? R32_LABELS[externalId] : undefined;
 		// Use regularTime (90-min score) for points — fullTime can include ET goals.
 		const homeScore = m.score.regularTime?.home ?? m.score.fullTime.home;
 		const awayScore = m.score.regularTime?.away ?? m.score.fullTime.away;
@@ -66,14 +75,10 @@ export async function GET(request: NextRequest) {
 					externalId,
 					homeTeam,
 					awayTeam,
+					homeLabel: labels?.[0] ?? null,
+					awayLabel: labels?.[1] ?? null,
 					group: toGroupLabel(m.group),
-					stage: toStage(m.stage) as
-						| "GROUP"
-						| "ROUND_OF_32"
-						| "ROUND_OF_16"
-						| "QUARTER_FINAL"
-						| "SEMI_FINAL"
-						| "FINAL",
+					stage,
 					scheduledAt: new Date(m.utcDate),
 					status: newStatus as "UPCOMING" | "LIVE" | "FINISHED",
 					homeScore: homeScore ?? undefined,
@@ -94,12 +99,14 @@ export async function GET(request: NextRequest) {
 			continue;
 		}
 
-		// Skip only when nothing changed. If the status/score/winner differs (e.g. a
-		// corrected final score), apply the update and recompute points below — this
-		// keeps prediction points in sync when a result settles after first being
-		// recorded (the old "skip once finished" guard left those points stale).
+		// Skip only when nothing changed. Knockout matches resolve their teams over
+		// time (TBD → real teams), so detect team changes too — otherwise confirmed
+		// playoff teams never get written. A status/score/winner change likewise flows
+		// through and re-awards points.
 		if (
 			existing.status === newStatus &&
+			existing.homeTeam === homeTeam &&
+			existing.awayTeam === awayTeam &&
 			existing.homeScore === homeScore &&
 			existing.awayScore === awayScore &&
 			existing.winner === winner
@@ -109,6 +116,9 @@ export async function GET(request: NextRequest) {
 		await prisma.match.update({
 			where: { id: existing.id },
 			data: {
+				homeTeam,
+				awayTeam,
+				scheduledAt: new Date(m.utcDate),
 				status: newStatus as "UPCOMING" | "LIVE" | "FINISHED",
 				homeScore: homeScore ?? undefined,
 				awayScore: awayScore ?? undefined,
